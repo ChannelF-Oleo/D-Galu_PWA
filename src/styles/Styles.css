@@ -1,0 +1,51 @@
+/* src/styles/Styles.css */
+
+/* -------------------------------------------
+   1. Clase base para el efecto Glassmorphism
+   ------------------------------------------- */
+.glass-effect {
+  /* El núcleo del efecto: desenfoque + fondo semitransparente */
+  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.1); /* Fondo blanco sutil */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Borde sutil */
+  border-radius: 16px;
+  /* Sombra para profundidad */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* -------------------------------------------
+   2. Animaciones
+   ------------------------------------------- */
+/* Animación de entrada general */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+/* Animación de pulso lento para el botón de Reserva (CTA) */
+@keyframes pulseSlow {
+  0%,
+  100% {
+    transform: scale(1);
+    /* Usa la sombra para el efecto de "pulso" con un tono rosado */
+    box-shadow: 0 0 0 0 rgba(230, 100, 140, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 10px rgba(230, 100, 140, 0);
+  }
+}
+
+.btn-pulse-slow {
+  animation: pulseSlow 3s infinite;
+}

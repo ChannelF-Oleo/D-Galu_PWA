@@ -1,0 +1,7 @@
+/* src/styles/Footer.css */
+
+/* Animación de hover para los enlaces de redes sociales */
+.social-icon-transition:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
