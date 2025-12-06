@@ -4,14 +4,13 @@
    1. Configuración Global y Variables
    ========================================= */
 :root {
-  /* --- Paleta de Colores (Sincronizada con colors.js) --- */
-  /* Primary (Rose) */
+  /* --- Paleta de Colores --- */
   --color-primary: #f43f5e; /* Rose-500 */
   --color-primary-hover: #e11d48; /* Rose-600 */
   --color-primary-light: #fb7185; /* Rose-400 */
-  --color-primary-bg: #ffe4e6; /* Rose-100 */
+  --color-primary-bg: #ffe4e6; /* Rose-100 - COLOR DE TU IMAGEN */
 
-  /* Neutral (Gray) */
+  /* Neutral */
   --color-text-dark: #1f2937; /* Gray-800 */
   --color-text-gray: #6b7280; /* Gray-500 */
   --color-bg-dark: #111827; /* Gray-900 */
@@ -22,13 +21,13 @@
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 
   /* Tipografía Fluida */
-  --font-size-hero-title: clamp(3rem, 6vw + 1rem, 6rem);
-  --font-size-hero-subtitle: clamp(1rem, 2vw + 0.5rem, 1.5rem);
+  --font-size-hero-title: clamp(3rem, 10vw, 5rem);
+  --font-size-hero-subtitle: clamp(0.9rem, 2vw + 0.5rem, 1.25rem);
   --font-size-section-title: clamp(2rem, 4vw + 1rem, 3.5rem);
 
-  /* --- Espaciado y Layout --- */
-  --container-width-xl: 80rem; /* 1280px */
-  --container-width-2xl: 96rem; /* 1536px */
+  /* --- Espaciado --- */
+  --container-width-xl: 80rem;
+  --container-width-2xl: 96rem;
   --radius-card: 1rem;
 }
 
@@ -43,10 +42,11 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 /* =========================================
-   2. Animaciones y Utilidades
+   2. Animaciones
    ========================================= */
 @keyframes fadeIn {
   from {
@@ -59,55 +59,36 @@ html {
   }
 }
 
-@keyframes pulseSlow {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
 .animate-fade-in {
   animation: fadeIn 0.8s ease-out forwards;
 }
 
 /* =========================================
-   3. Sección Hero (Móvil: Abajo Izquierda + Degradado)
+   3. Sección Hero (BASE / MÓVIL)
    ========================================= */
 .hero-section {
   position: relative;
-  height: 95dvh;
-  min-height: 600px;
+  /* Altura dinámica para asegurar que quepa todo en móvil */
+  min-height: 95vh;
   display: flex;
 
-  /* --- CONFIGURACIÓN MÓVIL --- */
-  /* 1. Alineación: Abajo (flex-end) y a la Izquierda (flex-start) */
-  align-items: flex-end;
+  /* --- MÓVIL: Alineación --- */
+  align-items: center; /* Centrado vertical */
   justify-content: flex-start;
   text-align: left;
 
-  /* 2. Fondo: Degradado Moderno (Gris Oscuro -> Rose) */
-  background: linear-gradient(
-    135deg,
-    var(--color-bg-dark) 20%,
-    var(--color-primary) 150%
-  );
+  /* Fondo: Rosa Pastel (Tu imagen) */
+  background: linear-gradient(180deg, #fff0f3 0%, #ffe4e6 100%);
 
   overflow: hidden;
-  color: var(--color-white);
+  color: var(--color-text-dark);
 
-  /* Padding lateral y mucho padding inferior para separar de la ola */
-  padding: 0 1.5rem;
-  padding-bottom: 9rem;
-
-
+  /* Padding ajustado: Arriba para el nav, Abajo grande para la ola */
+  padding: 6rem 1.5rem 8rem 1.5rem;
 }
 
-/* Ocultamos la imagen en móvil para que se vea el degradado */
 .hero-background {
-  display: none;
+  display: none; /* Oculto en móvil */
   position: absolute;
   inset: 0;
   width: 100%;
@@ -122,6 +103,7 @@ html {
 }
 
 .hero-overlay {
+  display: none; /* Sin overlay oscuro en móvil */
   position: absolute;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.55);
@@ -133,27 +115,50 @@ html {
   z-index: 10;
   width: 100%;
   max-width: 100%;
-  /* Aseguramos alineación izquierda */
-  text-align: left;
 }
 
 .hero-title {
   font-family: var(--font-serif);
   font-size: var(--font-size-hero-title);
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   line-height: 1.1;
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-shadow: none;
+  color: var(--color-primary);
 }
 
+/* --- SUBTÍTULO (EFECTO CRISTAL) --- */
 .hero-subtitle {
   font-size: var(--font-size-hero-subtitle);
-  font-weight: 300;
+  font-weight: 600;
   letter-spacing: 0.05em;
   margin-bottom: 2rem;
-  color: rgba(255, 255, 255, 0.95);
-  display: block;
-  max-width: 90%; /* Evita que choque con el borde derecho en móvil */
+
+  /* Layout */
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+
+  /* MÓVIL: Permitir saltos de línea para que no rompa el ancho */
+  white-space: normal;
+  max-width: 100%;
+
+  /* Cristal sobre Fondo Claro */
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: var(--color-text-dark);
+  box-shadow: 0 4px 15px rgba(244, 63, 94, 0.1);
+}
+
+.hero-quote {
+  font-size: 1.1rem;
+  color: var(--color-text-gray);
+  margin-bottom: 2rem;
+  font-weight: 500;
+  max-width: 90%;
+  line-height: 1.6;
 }
 
 /* Botón CTA */
@@ -173,20 +178,18 @@ html {
   box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
   text-decoration: none;
   cursor: pointer;
-  /* Margen superior para separarlo del texto en móvil */
-  margin-top: 1rem;
+  font-family: inherit;
 }
 
 .btn-cta:hover {
   background-color: transparent;
-  color: var(--color-white);
-  border-color: var(--color-white);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(244, 63, 94, 0.6);
 }
 
 /* =========================================
-   4. Shape Divider (La Ola)
+   4. Shape Divider (VISIBLE SOLO EN MÓVIL/TABLET)
    ========================================= */
 .custom-shape-divider-bottom-1671234567 {
   position: absolute;
@@ -197,13 +200,14 @@ html {
   line-height: 0;
   transform: rotate(180deg);
   z-index: 5;
+  display: block; /* Visible por defecto */
 }
 
 .custom-shape-divider-bottom-1671234567 svg {
   position: relative;
   display: block;
   width: calc(100% + 1.3px);
-  height: 80px;
+  height: 60px; /* Altura en móvil */
 }
 
 .custom-shape-divider-bottom-1671234567 .shape-fill {
@@ -211,10 +215,10 @@ html {
 }
 
 /* =========================================
-   5. Sección de Servicios
+   5. Servicios
    ========================================= */
 .services-section {
-  padding: 6rem 0;
+  padding: 4rem 0;
   background-color: var(--color-bg-light);
 }
 
@@ -230,7 +234,7 @@ html {
   font-size: var(--font-size-section-title);
   font-family: var(--font-serif);
   font-weight: 700;
-  margin-bottom: 4rem;
+  margin-bottom: 3rem;
   color: var(--color-text-dark);
 }
 
@@ -238,7 +242,6 @@ html {
   color: var(--color-primary);
 }
 
-/* Grid System */
 .services-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -246,27 +249,28 @@ html {
   width: 100%;
 }
 
-/* Tarjeta */
 .service-card {
   background: var(--color-white);
   border-radius: var(--radius-card);
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
+  border: none;
+  padding: 0;
+  text-align: inherit;
+  cursor: pointer;
 }
 
 .service-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 20px -5px rgba(0, 0, 0, 0.1);
 }
 
 .card-image-wrapper {
-  height: 220px;
+  height: 200px;
   width: 100%;
   overflow: hidden;
 }
@@ -279,11 +283,11 @@ html {
 }
 
 .service-card:hover .card-image {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .card-content {
-  padding: 2rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -291,41 +295,21 @@ html {
   flex-grow: 1;
 }
 
-.icon-wrapper {
-  margin-top: -3.5rem;
-  margin-bottom: 1rem;
-  background-color: var(--color-white);
-  padding: 0.75rem;
-  border-radius: 50%;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 4rem;
-  height: 4rem;
-  z-index: 2;
-  position: relative;
-}
-
-.icon-styled {
-  color: var(--color-primary);
-  width: 2rem;
-  height: 2rem;
-}
-
 .card-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text-dark);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   font-family: var(--font-serif);
 }
 
 .card-desc {
   color: var(--color-text-gray);
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
   flex-grow: 1;
+  font-family: sans-serif;
 }
 
 .card-link {
@@ -335,15 +319,11 @@ html {
   align-items: center;
   gap: 0.25rem;
   text-decoration: none;
-  transition: gap 0.2s ease;
-}
-
-.service-card:hover .card-link {
-  gap: 0.5rem;
+  font-family: sans-serif;
 }
 
 /* =========================================
-   6. Media Queries (Responsividad y Layout)
+   6. Media Queries (TABLET & DESKTOP)
    ========================================= */
 
 /* Tablet (min-width: 640px) */
@@ -351,55 +331,76 @@ html {
   .services-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-
   .custom-shape-divider-bottom-1671234567 svg {
-    height: 120px;
+    height: 100px;
+  }
+
+  /* En tablet ya podemos intentar forzar una línea */
+  .hero-subtitle {
+    white-space: nowrap;
+    padding: 0.75rem 2rem;
   }
 }
 
 /* Desktop (min-width: 1024px) */
 @media (min-width: 1024px) {
-  /* --- Restauramos Diseño Escritorio --- */
+  /* --- DESKTOP: Estilo Oscuro y SIN OLA --- */
   .hero-section {
-    align-items: center; /* Centrado vertical */
-    background: var(--color-bg-dark); /* Quitamos degradado */
-    padding-bottom: 0; /* Reset padding móvil */
-    justify-content: flex-start; /* Alineado a izquierda */
-    text-align: left;
+    align-items: center;
+    background: var(--color-bg-dark); /* Fondo oscuro */
+    color: var(--color-white);
+    padding-bottom: 0; /* Ya no necesitamos espacio para la ola */
   }
 
-  /* Mostramos la imagen de nuevo */
   .hero-background {
     display: block;
   }
+  .hero-overlay {
+    display: block;
+  }
 
-  .hero-content {
-    margin-left: 5%;
-    text-align: left;
-    max-width: 650px;
+  /* OCULTAR LA OLA EN PC */
+  .custom-shape-divider-bottom-1671234567 {
+    display: none;
+  }
+
+  .hero-title {
+    color: var(--color-white);
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .hero-subtitle {
-    margin-left: 0;
+    /* Cristal sobre fondo oscuro */
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--color-white);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+    /* Forzar una sola línea en pantallas grandes */
+    white-space: nowrap;
   }
 
-  .btn-cta {
-    width: auto;
-    padding: 1rem 3rem;
-    margin-top: 2rem;
+  .hero-quote {
+    color: rgba(255, 255, 255, 0.95);
   }
 
-  /* Grid 3 Columnas */
+  .btn-cta:hover {
+    color: var(--color-white);
+    border-color: var(--color-white);
+  }
+
+  /* Layout Desktop */
+  .hero-content {
+    margin-left: 5%;
+    max-width: 900px;
+  }
+
   .services-grid {
     grid-template-columns: repeat(3, 1fr);
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
     gap: 3rem;
-  }
-
-  .custom-shape-divider-bottom-1671234567 svg {
-    height: 150px;
   }
 }
 

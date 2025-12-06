@@ -1,45 +1,95 @@
 // src/App.jsx
 
 import React from "react";
-// Importamos los componentes que ya hemos creado
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+// Contexto
+import { AuthProvider, useAuth } from "./context/AuthContext";
+
+// Componentes Globales
 import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
 import Footer from "./components/Footer";
 
-// Si usáramos React Router, los imports serían diferentes,
-// pero para una estructura inicial, cargamos Home directamente.
+// Páginas Públicas
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+
+// Páginas de Administración (Asumiendo que guardaste el archivo en pages)
+import AdminDashboard from "./pages/AdminDashboard";
+
+// Próximas páginas
+import ServicesList from "./pages/Services/ServicesList";
+import ServiceDetail from "./pages/Services/ServiceDetail";
+
+import ProductsList from "./pages/Products/ProductsList";
+import ProductDetail from "./pages/Products/ProductDetail";
+
+import CoursesList from "./pages/Academy/CoursesList";
+import CourseDetail from "./pages/Academy/CourseDetail";
+
+import About from "./pages/About";
+import Gallery from "./pages/Gallery";
+import Booking from "./pages/Booking";
+
+// Componente para proteger rutas privadas
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div className="p-10 text-center">Cargando...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+
+  return children;
+};
 
 const App = () => {
   return (
-    // El div principal envuelve toda la aplicación
-    <div className="min-h-screen flex flex-col bg-white">
-      {/* 1. La barra de navegación se mantiene fija en la parte superior */}
-      <Navbar />
+    <AuthProvider>
+      <BrowserRouter>
+        <div className="min-h-screen flex flex-col bg-white">
+          {/* NAVBAR GLOBAL */}
+          <Navbar />
 
-      {/* 2. Contenido principal de la aplicación (la página Home por ahora) */}
-      <main className="flex-grow">
-        <Home />
-        {/*
-          Aquí es donde se integrarían las rutas (Ej: si usamos React Router):
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/servicios" element={<ServicesPage />} />
-            <Route path="/cita" element={<BookingFlow />} />
-            {/* ... otras rutas
-          </Routes>
-        */}
-      </main>
+          {/* CONTENIDO PRINCIPAL */}
+          <main className="flex-grow">
+            <Routes>
+              {/* PUBLICAS */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
 
-      {/* 3. El pie de página */}
-      <Footer />
+              {/* RUTA PRIVADA ADMIN */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-      {/*
-        Opcional: Si quieres incluir el botón flotante de WhatsApp,
-        lo añadirías aquí, fuera de la estructura principal de la página,
-        pero dentro del contenedor <div className="min-h-screen...">.
-      */}
-      {/* <WhatsAppButton /> */}
-    </div>
+              {/* SERVICIOS */}
+              <Route path="/services" element={<ServicesList />} />
+              <Route path="/services/:id" element={<ServiceDetail />} />
+
+              {/* PRODUCTOS */}
+              <Route path="/products" element={<ProductsList />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+
+              {/* ACADEMY */}
+              <Route path="/academy" element={<CoursesList />} />
+              <Route path="/academy/:id" element={<CourseDetail />} />
+
+              {/* OTRAS PÁGINAS */}
+              <Route path="/about" element={<About />} />
+              <Route path="/gallery" element={<Gallery />} />
+              <Route path="/booking" element={<Booking />} />
+            </Routes>
+          </main>
+
+          {/* FOOTER GLOBAL */}
+          <Footer />
+        </div>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 

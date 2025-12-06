@@ -1,0 +1,118 @@
+/* === LOGIN PAGE STYLES === */
+
+.login-wrapper {
+  min-height: 80vh;
+  padding-top: 6rem;
+  padding-bottom: 4rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 182, 193, 0.25),
+    rgba(255, 255, 255, 0.3)
+  );
+  backdrop-filter: blur(4px);
+}
+
+/* Tarjeta principal */
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 2.5rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  animation: fadeUp 0.7s ease;
+}
+
+/* Animación suave */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Títulos */
+.login-title {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: "Montserrat", serif;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: #111;
+}
+
+.login-subtitle {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+/* Inputs */
+.input-box {
+  position: relative;
+  margin-bottom: 1.4rem;
+}
+
+.input-box input {
+  width: 100%;
+  padding: 0.9rem 1rem 0.9rem 2.8rem;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  outline: none;
+  font-size: 0.95rem;
+  transition: all 0.25s ease;
+}
+
+.input-box input:focus {
+  border-color: #f472b6;
+  box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.4);
+}
+
+/* Iconos dentro del input */
+.input-icon {
+  position: absolute;
+  top: 50%;
+  left: 0.8rem;
+  transform: translateY(-50%);
+  color: #f472b6;
+}
+
+/* Botón */
+.btn-login {
+  width: 100%;
+  background-color: #f43f5e;
+  color: white;
+  padding: 0.9rem;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.btn-login:hover {
+  background-color: #e11d48;
+}
+
+/* Nota inferior */
+.login-info {
+  text-align: center;
+  margin-top: 1rem;
+  color: #777;
+  font-size: 0.85rem;
+}
