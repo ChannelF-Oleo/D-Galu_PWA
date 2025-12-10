@@ -135,8 +135,21 @@ const Footer = () => {
               Encuéntranos
             </h3>
 
-            <div className="bg-gray-700 h-32 w-full flex items-center justify-center text-sm rounded-lg shadow-inner text-gray-400">
-              [Mapa próximamente]
+            {/* Contenedor del mapa con estilos de Tailwind */}
+            <div className="w-full h-32 rounded-lg overflow-hidden shadow-lg border border-gray-600 relative group">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3784.444038748112!2d-69.93738942656262!3d18.46353528261898!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8ea563d92a3824df%3A0x4b258914d8f6f964!2sPlaza%20Central!5e0!3m2!1ses!2sdo!4v1765313721621!5m2!1ses!2sdo"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Ubicación D'Galu"
+                // Truco de diseño: El mapa en escala de grises para que combine con el footer oscuro, 
+                // y a color cuando pasas el mouse.
+                className="w-full h-full filter grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition duration-500 ease-in-out"
+              ></iframe>
             </div>
 
             <p className="text-sm mt-3 text-gray-400">

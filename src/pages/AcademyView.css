@@ -1,0 +1,429 @@
+.academy-view {
+    animation: fadeIn 0.3s ease-in;
+  }
+  
+  .academy-view__no-access {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #6b7280;
+  }
+  
+  .academy-view__no-access svg {
+    color: #f43f5e;
+    margin-bottom: 1rem;
+  }
+  
+  .academy-view__no-access h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .academy-view__header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .academy-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background-color: white;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .academy-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .academy-tab:hover {
+    background-color: #f9fafb;
+  }
+  
+  .academy-tab--active {
+    background-color: #f43f5e;
+    color: white;
+  }
+  
+  .academy-view__add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: #f43f5e;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .academy-view__add-btn:hover {
+    background-color: #e11d48;
+  }
+  
+  .academy-view__loading,
+  .academy-view__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    gap: 1rem;
+    color: #6b7280;
+    background-color: white;
+    border-radius: 0.75rem;
+    border: 1px solid #f3f4f6;
+  }
+  
+  .academy-view__empty svg {
+    color: #d1d5db;
+  }
+  
+  .academy-view__empty h3 {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0;
+  }
+  
+  /* Courses Grid */
+  .courses-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .course-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  
+  .course-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .course-card__header {
+    position: relative;
+    height: 180px;
+  }
+  
+  .course-card__image {
+    width: 100%;
+    height: 100%;
+    background-color: #f3f4f6;
+  }
+  
+  .course-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .course-card__placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d1d5db;
+  }
+  
+  .course-card__header .status-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+  
+  .course-card__content {
+    padding: 1.25rem;
+  }
+  
+  .course-card__name {
+    font-size: 1.125rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .course-card__description {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+  }
+  
+  .course-card__info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f3f4f6;
+  }
+  
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+  
+  .info-item svg {
+    color: #9ca3af;
+  }
+  
+  .course-card__actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1.25rem 1.25rem;
+  }
+  
+  .btn-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .btn-card--view {
+    background-color: white;
+    color: #6b7280;
+    border-color: #d1d5db;
+  }
+  
+  .btn-card--view:hover {
+    background-color: #f9fafb;
+  }
+  
+  .btn-card--edit {
+    background-color: white;
+    color: #3b82f6;
+    border-color: #3b82f6;
+  }
+  
+  .btn-card--edit:hover {
+    background-color: #eff6ff;
+  }
+  
+  /* Students Table */
+  .students-table-container {
+    background-color: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+  }
+  
+  .students-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .students-table thead {
+    background-color: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  .students-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+  }
+  
+  .students-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.875rem;
+  }
+  
+  .students-table tbody tr:hover {
+    background-color: #f9fafb;
+  }
+  
+  .student-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .student-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: #fecdd3;
+    color: #f43f5e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  
+  .student-name {
+    font-weight: 500;
+    color: #1f2937;
+  }
+  
+  .student-email {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.125rem;
+  }
+  
+  .payment-badge {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  
+  .payment--paid {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+  
+  .payment--pending {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+  
+  .payment--partial {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 0.5rem;
+    background-color: #f3f4f6;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 0.25rem;
+  }
+  
+  .progress-bar__fill {
+    height: 100%;
+    background-color: #10b981;
+    transition: width 0.3s ease;
+  }
+  
+  .progress-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+  
+  .text-muted {
+    color: #9ca3af;
+  }
+  
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+  
+  .status--active {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+  
+  .status--upcoming {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+  
+  .status--completed {
+    background-color: #f3f4f6;
+    color: #4b5563;
+  }
+  
+  .status--cancelled {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+  
+  /* Responsive */
+  @media (min-width: 640px) {
+    .courses-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .academy-view__header {
+      flex-direction: row;
+      align-items: center;
+    }
+  
+    .academy-tabs {
+      flex: 0 0 auto;
+    }
+  
+    .academy-view__add-btn {
+      margin-left: auto;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .courses-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  @media (max-width: 767px) {
+    .students-table-container {
+      overflow-x: auto;
+    }
+  
+    .students-table {
+      min-width: 900px;
+    }
+  }

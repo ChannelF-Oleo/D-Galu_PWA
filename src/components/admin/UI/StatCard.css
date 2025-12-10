@@ -1,0 +1,20 @@
+/* Mantenemos clases de utilidad de Tailwind pero extraemos la estructura */
+.stat-card-container {
+  @apply bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1;
+}
+
+.stat-icon-wrapper {
+  @apply p-4 rounded-lg text-white shadow-md;
+}
+
+.stat-title {
+  @apply text-gray-500 text-sm font-medium;
+}
+
+.stat-value {
+  @apply text-2xl font-bold text-gray-800;
+}
+
+.stat-trend {
+  @apply text-xs text-green-500 flex items-center gap-1;
+}

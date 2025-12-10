@@ -1,0 +1,73 @@
+/* src/pages/Users/UsersView.css */
+
+.users-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+    animation: fadeIn 0.3s ease-in;
+  }
+  
+  .users-view__header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: space-between;
+  }
+  
+  @media (min-width: 768px) {
+    .users-view__header {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+  
+  .users-view__search {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .users-view__search input {
+    border: none;
+    outline: none;
+    margin-left: 0.5rem;
+    width: 100%;
+    color: #374151;
+  }
+  
+  /* Tabla */
+  .users-table th {
+    font-weight: 600;
+    color: #6b7280;
+  }
+  
+  .users-table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  /* Badges de Roles */
+  .badge-admin {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+  
+  .badge-staff {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+  
+  .badge-client {
+    background-color: #f3f4f6;
+    color: #4b5563;
+  }
+
+  /* Responsive Table Wrapper */
+  .users-table-container {
+      overflow-x: auto;
+  }

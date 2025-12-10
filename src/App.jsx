@@ -1,7 +1,7 @@
 // src/App.jsx
 
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom"; // Agregué Outlet
 
 // Contexto
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -14,10 +14,10 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 
-// Páginas de Administración (Asumiendo que guardaste el archivo en pages)
+// Páginas de Administración
 import AdminDashboard from "./pages/AdminDashboard";
 
-// Próximas páginas
+// Próximas páginas (Tus imports originales)
 import ServicesList from "./pages/Services/ServicesList";
 import ServiceDetail from "./pages/Services/ServiceDetail";
 
@@ -41,53 +41,61 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Layout para la parte pública (Con Navbar y Footer)
+const PublicLayout = () => {
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
+      <Navbar />
+      <main className="flex-grow">
+        {/* Aquí se renderizará el contenido de la ruta hija */}
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
 const App = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="min-h-screen flex flex-col bg-white">
-          {/* NAVBAR GLOBAL */}
-          <Navbar />
+        <Routes>
+          
+          {/* GRUPO 1: RUTAS DEL ADMINISTRADOR (Sin Navbar/Footer) */}
+          <Route
+            path="/AdminDashboard"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* CONTENIDO PRINCIPAL */}
-          <main className="flex-grow">
-            <Routes>
-              {/* PUBLICAS */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
+          {/* GRUPO 2: RUTAS PÚBLICAS (Con Navbar/Footer) */}
+          {/* Todas las rutas dentro de este Route usarán PublicLayout */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
 
-              {/* RUTA PRIVADA ADMIN */}
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
+            {/* Servicios */}
+            <Route path="/services" element={<ServicesList />} />
+            <Route path="/services/:id" element={<ServiceDetail />} />
 
-              {/* SERVICIOS */}
-              <Route path="/services" element={<ServicesList />} />
-              <Route path="/services/:id" element={<ServiceDetail />} />
+            {/* Productos */}
+            <Route path="/products" element={<ProductsList />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
 
-              {/* PRODUCTOS */}
-              <Route path="/products" element={<ProductsList />} />
-              <Route path="/products/:id" element={<ProductDetail />} />
+            {/* Academy */}
+            <Route path="/academy" element={<CoursesList />} />
+            <Route path="/academy/:id" element={<CourseDetail />} />
 
-              {/* ACADEMY */}
-              <Route path="/academy" element={<CoursesList />} />
-              <Route path="/academy/:id" element={<CourseDetail />} />
+            {/* Otras Páginas */}
+            <Route path="/about" element={<About />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/booking" element={<Booking />} />
+          </Route>
 
-              {/* OTRAS PÁGINAS */}
-              <Route path="/about" element={<About />} />
-              <Route path="/gallery" element={<Gallery />} />
-              <Route path="/booking" element={<Booking />} />
-            </Routes>
-          </main>
-
-          {/* FOOTER GLOBAL */}
-          <Footer />
-        </div>
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );

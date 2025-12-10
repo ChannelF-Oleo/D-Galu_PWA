@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Mail, Lock, LogIn, AlertCircle, Loader2 } from "lucide-react";
 import "../styles/Login.css";
+import { doc, setDoc } from "firebase/firestore";
+import { db, auth } from "../config/firebase"; // Asegura los imports
 
 const Login = () => {
   // Hooks
@@ -72,7 +74,6 @@ const Login = () => {
       <form className="login-card glass-card" onSubmit={handleSubmit}>
         <h2 className="login-title">Acceso</h2>
         <p className="login-subtitle">Ingresa tus credenciales</p>
-
         {/* Alerta de Error */}
         {error && (
           <div
@@ -93,7 +94,6 @@ const Login = () => {
             <span>{error}</span>
           </div>
         )}
-
         {/* Email */}
         <div className="input-box">
           <Mail className="input-icon" />
@@ -107,7 +107,6 @@ const Login = () => {
             disabled={loading} // Deshabilitar mientras carga
           />
         </div>
-
         {/* Password */}
         <div className="input-box">
           <Lock className="input-icon" />
@@ -121,7 +120,6 @@ const Login = () => {
             disabled={loading} // Deshabilitar mientras carga
           />
         </div>
-
         {/* Submit Button */}
         <button
           type="submit"
