@@ -5,8 +5,62 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Z-Index Scale for consistent stacking */
+    --z-base: 0;
+    --z-content: 10;
+    --z-navbar: 50;
+    --z-sidebar: 50;
+    --z-overlay: 900;
+    --z-modal: 1000;
+    --z-toast: 9999;
+
+    /* Theme Colors - Light Mode (Default) */
+    --color-primary: #f43f5e;
+    --color-primary-hover: #e11d48;
+    --color-primary-light: #fb7185;
+    --color-primary-dark: #be123c;
+    
+    --color-secondary: #a855f7;
+    --color-secondary-hover: #9333ea;
+    
+    --color-background: #ffffff;
+    --color-background-secondary: #f9fafb;
+    --color-background-tertiary: #f3f4f6;
+    
+    --color-text: #1f2937;
+    --color-text-secondary: #6b7280;
+    --color-text-muted: #9ca3af;
+    
+    --color-border: #e5e7eb;
+    --color-border-light: #f3f4f6;
+    
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+  }
+
+  /* Dark Mode Theme */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background: #111827;
+      --color-background-secondary: #1f2937;
+      --color-background-tertiary: #374151;
+      
+      --color-text: #f9fafb;
+      --color-text-secondary: #d1d5db;
+      --color-text-muted: #9ca3af;
+      
+      --color-border: #374151;
+      --color-border-light: #4b5563;
+    }
+  }
+
   body {
     @apply font-sans antialiased;
+    background-color: var(--color-background);
+    color: var(--color-text);
   }
 
   h1,
@@ -16,5 +70,173 @@
   h5,
   h6 {
     @apply font-serif;
+    color: var(--color-text);
   }
+}
+
+@layer utilities {
+  .z-base { z-index: var(--z-base); }
+  .z-content { z-index: var(--z-content); }
+  .z-navbar { z-index: var(--z-navbar); }
+  .z-sidebar { z-index: var(--z-sidebar); }
+  .z-overlay { z-index: var(--z-overlay); }
+  .z-modal { z-index: var(--z-modal); }
+  .z-toast { z-index: var(--z-toast); }
+}
+
+/* =========================================
+   ESTILOS GLOBALES PARA MODALES
+   Soporte para tema claro y oscuro
+   ========================================= */
+
+/* Portal Root - Asegurar que los modales estén sobre todo */
+#portal-root {
+  position: relative;
+  z-index: var(--z-modal);
+}
+
+/* Modal Backdrop */
+#portal-root > div {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Modal Container - Tema Claro (Default) */
+#portal-root .bg-white {
+  background: #ffffff !important;
+  color: #1f2937;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+#portal-root .bg-white h2,
+#portal-root .bg-white h3 {
+  color: #1f2937 !important;
+}
+
+#portal-root .bg-white label {
+  color: #374151 !important;
+}
+
+#portal-root .bg-white input,
+#portal-root .bg-white textarea,
+#portal-root .bg-white select {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  border-color: #d1d5db !important;
+}
+
+#portal-root .bg-white input::placeholder,
+#portal-root .bg-white textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+#portal-root .bg-white input:focus,
+#portal-root .bg-white textarea:focus,
+#portal-root .bg-white select:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.1) !important;
+  outline: none !important;
+}
+
+#portal-root .bg-gray-50 {
+  background: #f9fafb !important;
+}
+
+/* Modal Container - Tema Oscuro */
+.admin-layout.dark-theme #portal-root .bg-white,
+.dark-theme #portal-root .bg-white {
+  background: #1f2937 !important;
+  color: #f9fafb !important;
+  border-color: rgba(75, 85, 99, 0.5) !important;
+}
+
+.admin-layout.dark-theme #portal-root .bg-white h2,
+.admin-layout.dark-theme #portal-root .bg-white h3,
+.dark-theme #portal-root .bg-white h2,
+.dark-theme #portal-root .bg-white h3 {
+  color: #f9fafb !important;
+}
+
+.admin-layout.dark-theme #portal-root .bg-white label,
+.dark-theme #portal-root .bg-white label {
+  color: #e5e7eb !important;
+}
+
+.admin-layout.dark-theme #portal-root .bg-white input,
+.admin-layout.dark-theme #portal-root .bg-white textarea,
+.admin-layout.dark-theme #portal-root .bg-white select,
+.dark-theme #portal-root .bg-white input,
+.dark-theme #portal-root .bg-white textarea,
+.dark-theme #portal-root .bg-white select {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border-color: #4b5563 !important;
+}
+
+.admin-layout.dark-theme #portal-root .bg-white input::placeholder,
+.admin-layout.dark-theme #portal-root .bg-white textarea::placeholder,
+.dark-theme #portal-root .bg-white input::placeholder,
+.dark-theme #portal-root .bg-white textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+.admin-layout.dark-theme #portal-root .bg-gray-50,
+.dark-theme #portal-root .bg-gray-50 {
+  background: #111827 !important;
+  border-color: rgba(75, 85, 99, 0.5) !important;
+}
+
+.admin-layout.dark-theme #portal-root .border-b,
+.dark-theme #portal-root .border-b {
+  border-color: rgba(75, 85, 99, 0.5) !important;
+}
+
+/* Botones en modales - Tema Oscuro */
+.admin-layout.dark-theme #portal-root .text-gray-400,
+.dark-theme #portal-root .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+.admin-layout.dark-theme #portal-root .text-gray-400:hover,
+.dark-theme #portal-root .text-gray-400:hover {
+  color: #f9fafb !important;
+}
+
+.admin-layout.dark-theme #portal-root .text-gray-600,
+.dark-theme #portal-root .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+.admin-layout.dark-theme #portal-root .text-gray-700,
+.dark-theme #portal-root .text-gray-700 {
+  color: #e5e7eb !important;
+}
+
+.admin-layout.dark-theme #portal-root .text-gray-800,
+.dark-theme #portal-root .text-gray-800 {
+  color: #f9fafb !important;
+}
+
+/* Botón cancelar en tema oscuro */
+.admin-layout.dark-theme #portal-root button.hover\:bg-gray-50:hover,
+.dark-theme #portal-root button.hover\:bg-gray-50:hover {
+  background: #374151 !important;
+}
+
+/* Carrito - Estilos específicos */
+#portal-root .flex-direction-column {
+  flex-direction: column;
+}
+
+/* Shopping Cart Dark Theme */
+.admin-layout.dark-theme #portal-root .bg-gray-50,
+.dark-theme #portal-root .bg-gray-50 {
+  background: #111827 !important;
+}
+
+.admin-layout.dark-theme #portal-root .text-gray-800,
+.dark-theme #portal-root .text-gray-800 {
+  color: #f9fafb !important;
 }

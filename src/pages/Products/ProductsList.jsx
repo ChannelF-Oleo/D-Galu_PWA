@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import ProductCard from "../../components/products/ProductCard";
@@ -94,9 +94,10 @@ const ProductsList = () => {
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory, sortBy]);
 
-  const handleAddToCart = (product) => {
-    addItem(product, 1);
-    console.log('Producto agregado al carrito:', product);
+  // El ProductCard ya maneja el addItem internamente
+  // Este callback es solo para logging o acciones adicionales
+  const handleAddToCart = (product, event) => {
+    console.log('Producto agregado al carrito:', product.name);
   };
 
   // Contar productos por categoría

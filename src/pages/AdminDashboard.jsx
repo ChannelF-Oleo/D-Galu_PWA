@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { ThemeProvider } from "../context/ThemeContext";
 import {
   LayoutDashboard,
   Calendar,
@@ -8,6 +9,7 @@ import {
   ShoppingBag,
   GraduationCap,
   Users,
+  Image,
 } from "lucide-react";
 
 // Importar componentes
@@ -19,6 +21,7 @@ import BookingsView from "./BookingsView";
 import ProductsView from "./ProductsView";
 import AcademyView from "./AcademyView";
 import UsersView from "./UsersView";
+import GalleryAdminView from "./GalleryAdminView";
 import NotificationsInbox from "./NotificationsInbox"; 
 
 // Importar utilidades de roles
@@ -41,12 +44,15 @@ const AdminDashboard = () => {
   // Por defecto usamos 'admin', ajusta según tu estructura
   const userRole = user?.role || "admin";
 
+
+
   // Iconos para los items del menú
   const menuIcons = {
     dashboard: LayoutDashboard,
     bookings: Calendar,
     services: Scissors,
     products: ShoppingBag,
+    gallery: Image,
     academy: GraduationCap,
     users: Users,
   };
@@ -105,6 +111,9 @@ const AdminDashboard = () => {
         case "users":
           return <UsersView userRole={userRole} />;
 
+        case "gallery":
+          return <GalleryAdminView userRole={userRole} />;
+
       default:
         return (
           <div className="placeholder-view">
@@ -117,6 +126,44 @@ const AdminDashboard = () => {
   // Si se está mostrando el inbox de notificaciones, renderizarlo
   if (showNotificationsInbox) {
     return (
+      <ThemeProvider>
+        <div className="admin-layout">
+          <Sidebar
+            menuItems={menuItems}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            isSidebarOpen={isSidebarOpen}
+            setIsSidebarOpen={setIsSidebarOpen}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onLogout={handleLogout}
+          />
+
+          <div
+            className={`admin-layout__main ${
+              isSidebarCollapsed ? "admin-layout__main--expanded" : ""
+            }`}
+          >
+            <TopBar
+              user={user}
+              activeTab="notifications"
+              menuItems={[...menuItems, { id: 'notifications', label: 'Notificaciones' }]}
+              isSidebarOpen={isSidebarOpen}
+              toggleSidebar={toggleSidebar}
+              isSidebarCollapsed={isSidebarCollapsed}
+              toggleSidebarCollapse={toggleSidebarCollapse}
+            />
+
+            <main className="admin-layout__content">
+              <NotificationsInbox onBack={() => setShowNotificationsInbox(false)} />
+            </main>
+          </div>
+        </div>
+      </ThemeProvider>
+    );
+  }
+
+  return (
+    <ThemeProvider>
       <div className="admin-layout">
         <Sidebar
           menuItems={menuItems}
@@ -135,58 +182,18 @@ const AdminDashboard = () => {
         >
           <TopBar
             user={user}
-            activeTab="notifications"
-            menuItems={[...menuItems, { id: 'notifications', label: 'Notificaciones' }]}
+            activeTab={activeTab}
+            menuItems={menuItems}
             isSidebarOpen={isSidebarOpen}
             toggleSidebar={toggleSidebar}
             isSidebarCollapsed={isSidebarCollapsed}
             toggleSidebarCollapse={toggleSidebarCollapse}
           />
 
-          <main className="admin-layout__content">
-            <NotificationsInbox onBack={() => setShowNotificationsInbox(false)} />
-          </main>
+          <main className="admin-layout__content">{renderContent()}</main>
         </div>
       </div>
-    );
-  }
-
-  // En AdminDashboard.jsx, antes del return
-console.log("--- DEBUG ADMIN DASHBOARD ---");
-console.log("Usuario actual:", user);
-console.log("Rol detectado:", userRole);
-console.log("Items del menú generados:", menuItems);
-
-  return (
-    <div className="admin-layout">
-      <Sidebar
-        menuItems={menuItems}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
-        isSidebarCollapsed={isSidebarCollapsed}
-        onLogout={handleLogout}
-      />
-
-      <div
-        className={`admin-layout__main ${
-          isSidebarCollapsed ? "admin-layout__main--expanded" : ""
-        }`}
-      >
-        <TopBar
-          user={user}
-          activeTab={activeTab}
-          menuItems={menuItems}
-          isSidebarOpen={isSidebarOpen}
-          toggleSidebar={toggleSidebar}
-          isSidebarCollapsed={isSidebarCollapsed}
-          toggleSidebarCollapse={toggleSidebarCollapse}
-        />
-
-        <main className="admin-layout__content">{renderContent()}</main>
-      </div>
-    </div>
+    </ThemeProvider>
   );
 };
 

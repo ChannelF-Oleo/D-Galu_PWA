@@ -147,13 +147,27 @@ export const orderSchema = z.object({
 });
 
 // Form validation schemas (for client-side validation)
-export const serviceFormSchema = serviceSchema.omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-}).extend({
-  price: z.string().transform((val) => parseFloat(val)),
-  duration: z.string().transform((val) => parseInt(val)),
+// Schema flexible para el formulario de servicios
+export const serviceFormSchema = z.object({
+  name: z.string().min(1, 'El nombre del servicio es requerido'),
+  description: z.string().optional().default(''),
+  category: z.string().min(1, 'La categoría es requerida'),
+  price: z.string().or(z.number()).transform((val) => {
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    return isNaN(num) ? 0 : num;
+  }),
+  duration: z.string().or(z.number()).transform((val) => {
+    const num = typeof val === 'string' ? parseInt(val) : val;
+    return isNaN(num) ? 0 : num;
+  }),
+  image: z.string().nullable().optional(),
+  subservices: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    price: z.number(),
+    duration: z.number(),
+    description: z.string().optional(),
+  })).optional().default([]),
 });
 
 export const productFormSchema = productSchema.omit({ 
@@ -208,7 +222,21 @@ export type OrderStatus = z.infer<typeof orderStatusSchema>;
 export type CustomerInfo = z.infer<typeof customerInfoSchema>;
 
 // Form type exports
-export type ServiceFormData = z.infer<typeof serviceFormSchema>;
+export type ServiceFormData = {
+  name: string;
+  description?: string;
+  category: string;
+  price: number;
+  duration: number;
+  image?: string | null;
+  subservices?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    duration: number;
+    description?: string;
+  }>;
+};
 export type ProductFormData = z.infer<typeof productFormSchema>;
 export type BookingFormData = z.infer<typeof bookingFormSchema>;
 export type CourseFormData = z.infer<typeof courseFormSchema>;

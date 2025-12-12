@@ -1,5 +1,5 @@
 // src/components/products/ProductCard.jsx
-import React from 'react';
+import { } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Star, Package, AlertTriangle } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
@@ -14,14 +14,11 @@ const ProductCard = ({ product, onAddToCart, showAddToCart = true }) => {
 
   const handleAddToCart = (e) => {
     e.stopPropagation(); // Evitar que se active el click del card
+    e.preventDefault();
     
-    // Agregar al carrito usando el contexto
-    addItem(product, 1);
-    
-    // Llamar callback si existe (para compatibilidad)
-    if (onAddToCart) {
-      onAddToCart(product);
-    }
+    // Agregar al carrito usando el contexto con el evento
+    // NO llamamos onAddToCart porque eso causaría doble-add
+    addItem(product, 1, e);
   };
 
   const isLowStock = product.stock <= product.minStock;

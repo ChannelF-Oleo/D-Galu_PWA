@@ -65,7 +65,7 @@ export function validateFormData<T>(
       const fieldErrors: Record<string, string> = {};
       const generalErrors: string[] = [];
 
-      error.errors.forEach((err) => {
+      (error.errors || []).forEach((err) => {
         if (err.path.length > 0) {
           const fieldName = err.path.join('.');
           fieldErrors[fieldName] = err.message;

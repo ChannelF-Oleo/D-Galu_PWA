@@ -1,5 +1,5 @@
 // src/pages/Users/UsersView.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Search,
@@ -26,6 +26,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { hasPermission } from "../utils/rolePermissions";
+import Portal from "../components/ui/Portal";
+import ImageUploader from "../components/shared/ImageUploader";
 import "./UsersView.css";
 
 const UsersView = ({ userRole }) => {
@@ -269,8 +271,9 @@ const UsersView = ({ userRole }) => {
 
       {/* MODAL UNIVERSAL (CREAR / EDITAR) */}
       {showModal && (
-        <div className="modal-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={closeModal}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <Portal>
+          <div className="flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center p-6 border-b bg-gray-50">
               <h3 className="text-lg font-bold text-gray-800">
                   {isEditing ? "Editar Usuario" : "Crear Nuevo Usuario"}
@@ -280,6 +283,17 @@ const UsersView = ({ userRole }) => {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 
+                {/* Foto de Perfil */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Foto de Perfil</label>
+                    <ImageUploader
+                      folder="avatars"
+                      currentImage={formData.photoURL}
+                      onUpload={(url) => setFormData({...formData, photoURL: url})}
+                      disabled={submitting}
+                    />
+                </div>
+
                 {/* Nombre */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
@@ -363,7 +377,8 @@ const UsersView = ({ userRole }) => {
                 </div>
             </form>
           </div>
-        </div>
+          </div>
+        </Portal>
       )}
     </div>
   );

@@ -2,125 +2,162 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Funciones de verificación de roles basadas en Firestore
+    
+    // ===== HELPER FUNCTIONS =====
+    
+    // Get user role from custom claims (preferred) or Firestore document
     function getUserRole() {
-      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+      return request.auth != null && request.auth.token.role != null ? 
+             request.auth.token.role : 
+             (request.auth != null ? 
+              firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role : 
+              null);
     }
     
-    function isAdmin() {
-      return request.auth != null && getUserRole() == 'admin';
-    }
-    
-    function isManager() {
-      return request.auth != null && getUserRole() == 'manager';
-    }
-    
-    function isStaff() {
-      return request.auth != null && getUserRole() == 'staff';
-    }
-    
-    function isManagerOrAbove() {
-      return request.auth != null && getUserRole() in ['admin', 'manager'];
-    }
-    
-    function isStaffOrAbove() {
-      return request.auth != null && getUserRole() in ['admin', 'manager', 'staff'];
-    }
-    
+    // Check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+    // Role-based permission checks
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
     }
     
-    // Permitir lectura pública de todas las imágenes y archivos
-    match /{allPaths=**} {
-      allow read: if true;
+    function isManager() {
+      return isAuthenticated() && getUserRole() == 'manager';
     }
     
-    // PRODUCTOS - Imágenes de productos
-    match /products/{productId}/{allPaths=**} {
-      allow read: if true; // Lectura pública para mostrar en catálogo
-      allow write: if isManagerOrAbove(); // Manager+ puede gestionar imágenes de productos
-      allow delete: if isAdmin(); // Solo Admin puede eliminar imágenes de productos
+    function isStaff() {
+      return isAuthenticated() && getUserRole() == 'staff';
     }
     
-    // SERVICIOS - Imágenes de servicios
-    match /services/{serviceId}/{allPaths=**} {
-      allow read: if true; // Lectura pública para mostrar servicios
-      allow write: if isManagerOrAbove(); // Manager+ puede gestionar imágenes de servicios
-      allow delete: if isAdmin(); // Solo Admin puede eliminar imágenes de servicios
+    function isCustomer() {
+      return isAuthenticated() && getUserRole() == 'customer';
     }
     
-    // USUARIOS - Avatares y archivos personales
-    match /users/{userId}/{allPaths=**} {
-      allow read: if true; // Lectura pública de avatares
-      allow write: if isManagerOrAbove() || isOwner(userId); // Manager+ o el propio usuario
-      allow delete: if isAdmin() || isOwner(userId); // Admin o el propio usuario
+    function isStudent() {
+      return isAuthenticated() && getUserRole() == 'student';
     }
     
-    // CURSOS/ACADEMIA - Materiales educativos
-    match /courses/{courseId}/{allPaths=**} {
-      allow read: if true; // Lectura pública para promocionar cursos
-      allow write: if isManagerOrAbove(); // Manager+ puede gestionar contenido de cursos
-      allow delete: if isAdmin(); // Solo Admin puede eliminar archivos de cursos
+    // Combined role checks
+    function isManagerOrAbove() {
+      return isAdmin() || isManager();
     }
     
-    // CERTIFICADOS - Documentos de graduación
-    match /certificates/{userId}/{allPaths=**} {
-      allow read: if isStaffOrAbove() || isOwner(userId); // Staff+ o el propio usuario
-      allow write: if isManagerOrAbove(); // Manager+ puede generar certificados
-      allow delete: if isAdmin(); // Solo Admin puede eliminar certificados
+    function isStaffOrAbove() {
+      return isAdmin() || isManager() || isStaff();
     }
     
-    // PROMOCIONES - Imágenes de marketing
-    match /promotions/{promotionId}/{allPaths=**} {
-      allow read: if true; // Lectura pública para mostrar promociones
-      allow write: if isManagerOrAbove(); // Manager+ puede gestionar promociones
-      allow delete: if isManagerOrAbove(); // Manager+ puede eliminar promociones
+    // File validation functions
+    function isValidImageFile() {
+      return (
+        // Verificar tipo MIME de imagen O application/octet-stream (fallback común)
+        (request.resource.contentType.matches('image/.*') || 
+         request.resource.contentType == 'application/octet-stream') &&
+        // Verificar tamaño (Menor a 10MB y mayor a 0)
+        request.resource.size < 10 * 1024 * 1024 && 
+        request.resource.size > 0
+      );
     }
     
-    // GALERÍA - Fotos del salón y trabajos realizados
+    function isValidDocumentFile() {
+      return request.resource.contentType in ['application/pdf', 'application/msword', 
+                                              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] &&
+             request.resource.size < 50 * 1024 * 1024; // 50MB limit for documents
+    }
+    
+    function isValidVideoFile() {
+      return request.resource.contentType.matches('video/.*') &&
+             request.resource.size < 500 * 1024 * 1024; // 500MB limit for videos
+    }
+
+    // ================================================================
+    // REGLAS DE CARPETAS (Aquí es donde se define la lectura/escritura)
+    // ================================================================
+
+    // ===== SERVICES FOLDER =====
+    match /services/{allPaths=**} {
+      // DEBUGGING: COMPLETAMENTE ABIERTO - SIN RESTRICCIONES
+      allow read, write, delete: if true;
+    }
+
+    // ===== PRODUCTS FOLDER =====
+    match /products/{allPaths=**} {
+      // DEBUGGING: COMPLETAMENTE ABIERTO - SIN RESTRICCIONES  
+      allow read, write, delete: if true;
+    }
+
+    // ===== COURSES FOLDER =====
+    match /courses/{allPaths=**} {
+      allow read: if isStudent() || isAdmin();
+      allow write: if isAdmin() && (isValidImageFile() || isValidDocumentFile() || isValidVideoFile());
+      allow delete: if isAdmin();
+    }
+
+    // ===== GALLERY FOLDER =====
     match /gallery/{allPaths=**} {
-      allow read: if true; // Lectura pública para mostrar trabajos
-      allow write: if isStaffOrAbove(); // Staff+ puede subir fotos de trabajos
-      allow delete: if isManagerOrAbove(); // Manager+ puede eliminar fotos
+      allow read: if true;
+      allow write: if isStaffOrAbove() && isValidImageFile();
+      allow delete: if isManagerOrAbove();
     }
-    
-    // REPORTES - Documentos de análisis
-    match /reports/{allPaths=**} {
-      allow read: if isManagerOrAbove(); // Manager+ puede acceder a reportes
-      allow write: if isManagerOrAbove(); // Manager+ puede generar reportes
-      allow delete: if isAdmin(); // Solo Admin puede eliminar reportes
+
+    // ===== USERS FOLDER =====
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      // Usuario dueño o Admin
+      allow write: if (isAuthenticated() && request.auth.uid == userId && isValidImageFile()) || 
+                      isAdmin();
+      allow delete: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
     }
-    
-    // SISTEMA - Archivos de configuración y backup
+
+    // ===== AVATARS FOLDER =====
+    match /avatars/{allPaths=**} {
+      allow read: if true;
+      // Cualquier usuario autenticado puede subir su avatar
+      allow write: if isAuthenticated() && isValidImageFile();
+      allow delete: if isAuthenticated() || isAdmin();
+    }
+
+    // ===== BOOKINGS FOLDER =====
+    match /bookings/{bookingId}/{allPaths=**} {
+      allow read: if isStaffOrAbove();
+      allow write: if isStaffOrAbove() && (isValidImageFile() || isValidDocumentFile());
+      allow delete: if isManagerOrAbove();
+    }
+
+    // ===== NOTIFICATIONS FOLDER =====
+    match /notifications/{allPaths=**} {
+      allow read: if isStaffOrAbove();
+      allow write: if isStaffOrAbove() && isValidImageFile();
+      allow delete: if isAdmin();
+    }
+
+    // ===== SYSTEM FOLDER =====
     match /system/{allPaths=**} {
-      allow read: if isStaffOrAbove(); // Staff+ puede leer archivos del sistema
-      allow write: if isAdmin(); // Solo Admin puede modificar archivos del sistema
-      allow delete: if isAdmin(); // Solo Admin puede eliminar archivos del sistema
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+      allow delete: if isAdmin();
     }
-    
-    // TEMPORALES - Archivos de trabajo temporal
+
+    // ===== TEMP FOLDER =====
     match /temp/{userId}/{allPaths=**} {
-      allow read, write: if isAuthenticated() && isOwner(userId); // Solo el propio usuario
-      allow delete: if isAuthenticated() && (isOwner(userId) || isManagerOrAbove()); // Usuario o Manager+
+      allow read: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
+      allow write: if isAuthenticated() && request.auth.uid == userId && 
+                      (isValidImageFile() || isValidDocumentFile());
+      allow delete: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
     }
-    
-    // UPLOADS - Área de subida general para staff
+
+    // ===== UPLOADS FOLDER =====
     match /uploads/{allPaths=**} {
-      allow read: if isStaffOrAbove(); // Staff+ puede leer uploads
-      allow write: if isStaffOrAbove(); // Staff+ puede subir archivos
-      allow delete: if isManagerOrAbove(); // Manager+ puede eliminar uploads
+      allow read: if isStaffOrAbove();
+      allow write: if isStaffOrAbove() && isValidImageFile();
+      allow delete: if isManagerOrAbove();
     }
-    
-    // BACKUP - Copias de seguridad
-    match /backup/{allPaths=**} {
-      allow read: if isAdmin(); // Solo Admin puede acceder a backups
-      allow write: if isAdmin(); // Solo Admin puede crear backups
-      allow delete: if isAdmin(); // Solo Admin puede eliminar backups
+
+    // ===== DEFAULT DENY =====
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

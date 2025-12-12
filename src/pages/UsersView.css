@@ -1,73 +1,705 @@
-/* src/pages/Users/UsersView.css */
+/* =========================================
+   USERS VIEW - MODERN THEMED STYLES
+   ========================================= */
 
-.users-view {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    width: 100%;
-    animation: fadeIn 0.3s ease-in;
+/* Animación de entrada */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* =========================================
+   CONTENEDOR PRINCIPAL
+   ========================================= */
+.users-view {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* =========================================
+   HEADER SECTION
+   ========================================= */
+.users-view__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.users-view__header h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-text-dark);
+}
+
+.users-view__header p {
+  font-size: 0.875rem;
+  color: var(--color-text-gray);
+  margin: 0;
+}
+
+/* Light Theme */
+.admin-layout.light-theme .users-view__header h2 {
+  color: var(--color-text-dark);
+}
+
+.admin-layout.light-theme .users-view__header p {
+  color: var(--color-text-gray);
+}
+
+/* Dark Theme */
+.admin-layout.dark-theme .users-view__header h2 {
+  color: var(--color-bg-light);
+}
+
+.admin-layout.dark-theme .users-view__header p {
+  color: #9ca3af;
+}
+
+/* =========================================
+   SEARCH BAR
+   ========================================= */
+.users-view__search {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.users-view__search svg {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-gray);
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+.users-view__search input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 3rem;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: var(--color-white);
+  color: var(--color-text-dark);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.users-view__search input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.1),
+              0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.users-view__search input::placeholder {
+  color: var(--color-text-gray);
+  opacity: 0.6;
+}
+
+/* Dark Theme Search */
+.admin-layout.dark-theme .users-view__search input {
+  background: rgba(31, 41, 55, 0.8);
+  color: var(--color-bg-light);
+  border-color: rgba(75, 85, 99, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.admin-layout.dark-theme .users-view__search input:focus {
+  background: rgba(31, 41, 55, 0.95);
+  border-color: var(--color-primary);
+}
+
+.admin-layout.dark-theme .users-view__search svg {
+  color: #9ca3af;
+}
+
+/* =========================================
+   TABLE CONTAINER
+   ========================================= */
+.users-table-container {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  transition: all 0.3s ease;
+}
+
+.users-table-container:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme Table Container */
+.admin-layout.dark-theme .users-table-container {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* =========================================
+   TABLE STYLES
+   ========================================= */
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table thead {
+  background: var(--color-bg-light);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.users-table thead th {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-gray);
+}
+
+.users-table tbody tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  background: var(--color-white);
+}
+
+.users-table tbody tr:hover {
+  background: var(--color-bg-light);
+  transform: translateX(2px);
+}
+
+.users-table tbody td {
+  padding: 1.25rem 1.5rem;
+  color: var(--color-text-dark);
+}
+
+/* Dark Theme Table */
+.admin-layout.dark-theme .users-table thead {
+  background: rgba(17, 24, 39, 0.8);
+  border-bottom: 2px solid rgba(75, 85, 99, 0.3);
+}
+
+.admin-layout.dark-theme .users-table thead th {
+  color: #9ca3af;
+}
+
+.admin-layout.dark-theme .users-table tbody tr {
+  background: rgba(31, 41, 55, 0.5);
+  border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+}
+
+.admin-layout.dark-theme .users-table tbody tr:hover {
+  background: rgba(31, 41, 55, 0.8);
+}
+
+.admin-layout.dark-theme .users-table tbody td {
+  color: var(--color-bg-light);
+}
+
+/* =========================================
+   ROLE BADGES
+   ========================================= */
+.badge-admin {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: white;
+  padding: 0.375rem 0.875rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+}
+
+.badge-staff {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 0.375rem 0.875rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.badge-client {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 0.375rem 0.875rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* =========================================
+   ACTION BUTTONS
+   ========================================= */
+.users-table button {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.users-table button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Edit Button */
+.users-table button:first-child {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.users-table button:first-child:hover {
+  background: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Delete Button */
+.users-table button:last-child {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.users-table button:last-child:hover {
+  background: rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Dark Theme Buttons */
+.admin-layout.dark-theme .users-table button:first-child {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.admin-layout.dark-theme .users-table button:last-child {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* =========================================
+   SPINNER
+   ========================================= */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(244, 63, 94, 0.1);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================
+   EMPTY STATE
+   ========================================= */
+.users-view .text-center {
+  padding: 4rem 2rem;
+  background: var(--color-white);
+  border-radius: 1rem;
+  margin-top: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+}
+
+.users-view .text-center svg {
+  opacity: 0.3;
+  margin-bottom: 1rem;
+  color: var(--color-text-gray);
+}
+
+.users-view .text-center p {
+  color: var(--color-text-gray);
+  font-size: 1rem;
+}
+
+/* Dark Theme Empty State */
+.admin-layout.dark-theme .users-view .text-center {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.admin-layout.dark-theme .users-view .text-center p {
+  color: #9ca3af;
+}
+
+/* =========================================
+   MODAL STYLES (Portal)
+   ========================================= */
+.admin-layout .bg-black\/50 {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.admin-layout .bg-white.rounded-xl {
+  background: var(--color-white);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.admin-layout .bg-gray-50 {
+  background: var(--color-bg-light);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Modal Form Inputs */
+.admin-layout input[type="text"],
+.admin-layout input[type="email"],
+.admin-layout textarea,
+.admin-layout select {
+  background: var(--color-white);
+  color: var(--color-text-dark);
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.admin-layout input:focus,
+.admin-layout textarea:focus,
+.admin-layout select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.1);
+}
+
+/* Dark Theme Modal */
+.admin-layout.dark-theme .bg-white.rounded-xl {
+  background: rgba(31, 41, 55, 0.98);
+  border: 1px solid rgba(75, 85, 99, 0.4);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.admin-layout.dark-theme .bg-gray-50 {
+  background: rgba(17, 24, 39, 0.8);
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.admin-layout.dark-theme input[type="text"],
+.admin-layout.dark-theme input[type="email"],
+.admin-layout.dark-theme textarea,
+.admin-layout.dark-theme select {
+  background: rgba(17, 24, 39, 0.6);
+  color: var(--color-bg-light);
+  border-color: rgba(75, 85, 99, 0.4);
+}
+
+.admin-layout.dark-theme input::placeholder,
+.admin-layout.dark-theme textarea::placeholder {
+  color: #6b7280;
+}
+
+/* =========================================
+   ROLE SELECTOR (Radio Buttons)
+   ========================================= */
+.admin-layout label[class*="flex flex-col items-center"] {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-layout label[class*="flex flex-col items-center"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.admin-layout label[class*="border-primary"] {
+  background: rgba(244, 63, 94, 0.05);
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
+}
+
+/* Dark Theme Role Selector */
+.admin-layout.dark-theme label[class*="flex flex-col items-center"] {
+  background: rgba(17, 24, 39, 0.6);
+  border-color: rgba(75, 85, 99, 0.4);
+}
+
+.admin-layout.dark-theme label[class*="border-primary"] {
+  background: rgba(244, 63, 94, 0.15);
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+   ========================================= */
+@media (max-width: 768px) {
+  .users-view {
+    padding: 1rem;
+  }
+
   .users-view__header {
-    display: flex;
     flex-direction: column;
     gap: 1rem;
-    justify-content: space-between;
-  }
-  
-  @media (min-width: 768px) {
-    .users-view__header {
-      flex-direction: row;
-      align-items: center;
-    }
-  }
-  
-  .users-view__search {
-    display: flex;
-    align-items: center;
-    background: white;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    border: 1px solid #e5e7eb;
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .users-view__search input {
-    border: none;
-    outline: none;
-    margin-left: 0.5rem;
-    width: 100%;
-    color: #374151;
-  }
-  
-  /* Tabla */
-  .users-table th {
-    font-weight: 600;
-    color: #6b7280;
-  }
-  
-  .users-table tr:last-child td {
-    border-bottom: none;
-  }
-  
-  /* Badges de Roles */
-  .badge-admin {
-    background-color: #fee2e2;
-    color: #991b1b;
-  }
-  
-  .badge-staff {
-    background-color: #dbeafe;
-    color: #1e40af;
-  }
-  
-  .badge-client {
-    background-color: #f3f4f6;
-    color: #4b5563;
   }
 
-  /* Responsive Table Wrapper */
-  .users-table-container {
-      overflow-x: auto;
+  .users-view__search {
+    max-width: 100%;
   }
+
+  .users-table-container {
+    overflow-x: auto;
+  }
+
+  .users-table {
+    min-width: 600px;
+  }
+
+  .users-table thead th,
+  .users-table tbody td {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .users-view__header h2 {
+    font-size: 1.5rem;
+  }
+
+  .users-table thead th,
+  .users-table tbody td {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.8rem;
+  }
+}
+
+
+/* =========================================
+   DARK THEME - FIXES ADICIONALES
+   ========================================= */
+
+/* Textos en la tabla */
+.admin-layout.dark-theme .users-table tbody td p {
+  color: #f9fafb !important;
+}
+
+.admin-layout.dark-theme .users-table tbody td .font-bold {
+  color: #f9fafb !important;
+}
+
+.admin-layout.dark-theme .users-table tbody td .text-xs {
+  color: #9ca3af !important;
+}
+
+.admin-layout.dark-theme .users-table tbody td .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+.admin-layout.dark-theme .users-table tbody td .text-gray-800 {
+  color: #f9fafb !important;
+}
+
+/* Avatar placeholder */
+.admin-layout.dark-theme .users-table .bg-primary\/10 {
+  background: rgba(244, 114, 182, 0.2) !important;
+}
+
+/* Botón nuevo usuario */
+.admin-layout.dark-theme .users-view .bg-blue-600 {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* Modal en tema oscuro */
+.admin-layout.dark-theme .users-view .bg-white.rounded-xl,
+.admin-layout.dark-theme #portal-root .bg-white.rounded-xl {
+  background: #1f2937 !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+}
+
+.admin-layout.dark-theme .users-view .bg-gray-50,
+.admin-layout.dark-theme #portal-root .bg-gray-50 {
+  background: #111827 !important;
+}
+
+.admin-layout.dark-theme .users-view h3.text-lg,
+.admin-layout.dark-theme #portal-root h3.text-lg {
+  color: #f9fafb !important;
+}
+
+.admin-layout.dark-theme .users-view label,
+.admin-layout.dark-theme #portal-root label {
+  color: #e5e7eb !important;
+}
+
+.admin-layout.dark-theme .users-view .text-gray-700,
+.admin-layout.dark-theme #portal-root .text-gray-700 {
+  color: #e5e7eb !important;
+}
+
+.admin-layout.dark-theme .users-view .text-gray-600,
+.admin-layout.dark-theme #portal-root .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+/* Inputs en modal oscuro */
+.admin-layout.dark-theme .users-view input.border,
+.admin-layout.dark-theme #portal-root input.border {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border-color: #4b5563 !important;
+}
+
+.admin-layout.dark-theme .users-view input::placeholder,
+.admin-layout.dark-theme #portal-root input::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Role selector cards */
+.admin-layout.dark-theme .users-view label.flex.flex-col {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #d1d5db !important;
+}
+
+.admin-layout.dark-theme .users-view label.flex.flex-col.border-primary {
+  background: rgba(244, 114, 182, 0.15) !important;
+  border-color: #f472b6 !important;
+  color: #f472b6 !important;
+}
+
+/* Botones del modal */
+.admin-layout.dark-theme .users-view button.hover\:bg-gray-50:hover,
+.admin-layout.dark-theme #portal-root button.hover\:bg-gray-50:hover {
+  background: #374151 !important;
+}
+
+.admin-layout.dark-theme .users-view .text-orange-500 {
+  color: #fb923c !important;
+}
+
+/* =========================================
+   DARK THEME - FIXES COMPLETOS TABLA
+   ========================================= */
+
+/* Forzar colores en toda la tabla */
+.admin-layout.dark-theme .users-view table {
+  background: transparent !important;
+}
+
+.admin-layout.dark-theme .users-view table thead {
+  background: rgba(17, 24, 39, 0.9) !important;
+}
+
+.admin-layout.dark-theme .users-view table thead th {
+  color: #9ca3af !important;
+  background: transparent !important;
+}
+
+.admin-layout.dark-theme .users-view table tbody {
+  background: transparent !important;
+}
+
+.admin-layout.dark-theme .users-view table tbody tr {
+  background: rgba(31, 41, 55, 0.6) !important;
+  border-bottom-color: rgba(75, 85, 99, 0.3) !important;
+}
+
+.admin-layout.dark-theme .users-view table tbody tr:hover {
+  background: rgba(55, 65, 81, 0.8) !important;
+}
+
+.admin-layout.dark-theme .users-view table tbody td {
+  color: #f9fafb !important;
+}
+
+/* Textos específicos en celdas */
+.admin-layout.dark-theme .users-view table td span,
+.admin-layout.dark-theme .users-view table td p,
+.admin-layout.dark-theme .users-view table td div {
+  color: #e5e7eb !important;
+}
+
+.admin-layout.dark-theme .users-view table td .text-sm {
+  color: #9ca3af !important;
+}
+
+/* Nombre de usuario */
+.admin-layout.dark-theme .users-view table td .font-medium,
+.admin-layout.dark-theme .users-view table td .font-semibold,
+.admin-layout.dark-theme .users-view table td .font-bold {
+  color: #f9fafb !important;
+}
+
+/* Email y textos secundarios */
+.admin-layout.dark-theme .users-view table td .text-gray-500,
+.admin-layout.dark-theme .users-view table td .text-gray-600 {
+  color: #9ca3af !important;
+}
+
+/* Avatar placeholder */
+.admin-layout.dark-theme .users-view .rounded-full.bg-gray-100,
+.admin-layout.dark-theme .users-view .rounded-full.bg-gray-200 {
+  background: rgba(75, 85, 99, 0.5) !important;
+}
+
+/* Contenedor de la tabla */
+.admin-layout.dark-theme .users-view .bg-white {
+  background: rgba(31, 41, 55, 0.8) !important;
+  border-color: rgba(75, 85, 99, 0.4) !important;
+}
+
+.admin-layout.dark-theme .users-view .shadow-sm {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4) !important;
+}

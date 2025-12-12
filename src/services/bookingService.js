@@ -20,15 +20,25 @@ export const createBooking = async (bookingData) => {
   } catch (error) {
     console.error('Error creating booking:', error);
     
+    // Check for network/offline errors
+    if (error.code === 'functions/unavailable' || 
+        error.code === 'functions/deadline-exceeded' ||
+        error.message?.includes('network') ||
+        error.message?.includes('offline')) {
+      throw new Error('❌ No tienes conexión a internet. Las reservas requieren conexión para confirmar disponibilidad y enviar confirmaciones por email.');
+    }
+    
     // Extract meaningful error message
     let errorMessage = 'Failed to create booking';
     
     if (error.code === 'functions/invalid-argument') {
-      errorMessage = error.message || 'Invalid booking data';
+      errorMessage = error.message || 'Datos de reserva inválidos';
     } else if (error.code === 'functions/unauthenticated') {
-      errorMessage = 'Please log in to create a booking';
+      errorMessage = 'Por favor inicia sesión para crear una reserva';
     } else if (error.code === 'functions/permission-denied') {
-      errorMessage = 'You do not have permission to create bookings';
+      errorMessage = 'No tienes permisos para crear reservas';
+    } else if (error.code === 'functions/failed-precondition') {
+      errorMessage = 'El sistema de emails no está configurado. Contacta al administrador.';
     }
     
     throw new Error(errorMessage);

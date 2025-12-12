@@ -1,17 +1,16 @@
 // src/App.jsx
 
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
 // Contexto
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 
 // Componentes Globales
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import ErrorBoundary from "./components/common/ErrorBoundary";
-import LoadingSpinner from "./components/common/LoadingSpinner";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
 // Páginas Públicas
@@ -39,20 +38,15 @@ import About from "./pages/About";
 import Gallery from "./pages/Gallery";
 import Booking from "./pages/Booking";
 
-// Componente de diagnóstico (TEMPORAL)
+// Componentes de desarrollo (solo en modo desarrollo)
 import SystemDiagnostic from "./components/debug/SystemDiagnostic";
 import UploadServices from "./pages/UploadServices";
 import TestNotifications from "./pages/TestNotifications";
+import SmokeTest from "./tests/SmokeTest";
 
-// Componente para rutas que requieren autenticación básica (mantenido para compatibilidad)
-const RequireAuth = ({ children }) => {
-  const { user, loading } = useAuth();
+// Componentes del carrito
+import ShoppingCart from "./components/cart/ShoppingCart";
 
-  if (loading) return <LoadingSpinner fullScreen text="Verificando autenticación..." />;
-  if (!user) return <Navigate to="/login" replace />;
-
-  return children;
-};
 
 // Layout para la parte pública (Con Navbar y Footer)
 const PublicLayout = () => {
@@ -74,6 +68,8 @@ const App = () => {
       <AuthProvider>
         <CartProvider>
           <BrowserRouter>
+          {/* Shopping Cart - Available globally */}
+          <ShoppingCart />
           <Routes>
           
           {/* GRUPO 1: RUTAS DEL ADMINISTRADOR (Sin Navbar/Footer) */}
@@ -199,11 +195,17 @@ const App = () => {
                   path="/test-notifications" 
                   element={<TestNotifications />} 
                 />
+                
+                {/* Smoke Test para React 19 */}
+                <Route 
+                  path="/smoke-test" 
+                  element={<SmokeTest />} 
+                />
               </>
             )}
           </Route>
 
-          </Routes>
+          </Routes>  
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>
@@ -212,3 +214,4 @@ const App = () => {
 };
 
 export default App;
+

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import Portal from "../components/ui/Portal";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { Image, Search, Filter, Eye, X } from "lucide-react";
@@ -272,7 +273,8 @@ const Gallery = () => {
 
       {/* Modal de imagen */}
       {selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75">
+        <Portal>
+          <div className="flex items-center justify-center p-4 bg-black bg-opacity-75">
           <div className="relative max-w-4xl max-h-full bg-white rounded-lg overflow-hidden">
             <button
               onClick={closeImageModal}
@@ -329,7 +331,8 @@ const Gallery = () => {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </Portal>
       )}
     </div>
   );

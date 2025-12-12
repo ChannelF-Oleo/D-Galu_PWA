@@ -7,9 +7,20 @@ import { getBookingConfirmationTemplate, getBookingReminderTemplate, getBookingS
 // Initialize Firebase Admin
 admin.initializeApp();
 
-// Initialize Resend
-const resendApiKey = functions.config().resend?.api_key;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+// Helper function to initialize Resend (lazy loading)
+function getResendClient(): Resend | null {
+  try {
+    const resendApiKey = functions.config().resend?.api_key;
+    if (!resendApiKey) {
+      console.error('❌ RESEND API KEY NOT CONFIGURED! Run: firebase functions:config:set resend.api_key="your_key"');
+      return null;
+    }
+    return new Resend(resendApiKey);
+  } catch (error) {
+    console.error('Error initializing Resend:', error);
+    return null;
+  }
+}
 
 // Zod Schemas for Data Validation
 const ServiceSchema = z.object({
@@ -18,7 +29,7 @@ const ServiceSchema = z.object({
   subserviceId: z.string().optional(),
   subserviceName: z.string().optional(),
   duration: z.number().min(15, 'Duration must be at least 15 minutes').max(480, 'Duration cannot exceed 8 hours'),
-  price: z.string().regex(/^\$?\d+(\.\d{2})?$/, 'Invalid price format')
+  // SECURITY: No validamos price aquí - se obtiene de la BD para prevenir fraude
 });
 
 const BookingSchema = z.object({
@@ -28,8 +39,7 @@ const BookingSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   time: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Time must be in HH:MM format'),
   services: z.array(ServiceSchema).min(1, 'At least one service is required').max(10, 'Too many services'),
-  totalDuration: z.number().min(15, 'Total duration must be at least 15 minutes').max(480, 'Total duration cannot exceed 8 hours'),
-  totalPrice: z.string().regex(/^\$?\d+(\.\d{2})?$/, 'Invalid total price format'),
+  // SECURITY: totalDuration y totalPrice se calculan en el backend basado en datos reales de la BD
   notes: z.string().max(500, 'Notes cannot exceed 500 characters').optional(),
   status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']).default('pending')
 });
@@ -203,14 +213,74 @@ export const createBooking = functions.https.onCall(async (data, context) => {
       throw new functions.https.HttpsError('invalid-argument', 'Cannot book appointments more than 6 months in advance');
     }
     
-    // Validate total duration matches sum of services
-    const calculatedDuration = validatedData.services.reduce((total, service) => total + service.duration, 0);
-    if (calculatedDuration !== validatedData.totalDuration) {
-      throw new functions.https.HttpsError('invalid-argument', 'Total duration does not match sum of service durations');
+    // SECURITY: Validate services against database and calculate real prices
+    const validatedServices = [];
+    let calculatedDuration = 0;
+    let calculatedPrice = 0;
+    
+    for (const service of validatedData.services) {
+      // Get real service data from Firestore
+      const serviceDoc = await admin.firestore().collection('services').doc(service.serviceId).get();
+      
+      if (!serviceDoc.exists) {
+        throw new functions.https.HttpsError('invalid-argument', `Service ${service.serviceId} not found`);
+      }
+      
+      const serviceData = serviceDoc.data();
+      
+      // Validate service is active
+      if (!serviceData?.active) {
+        throw new functions.https.HttpsError('invalid-argument', `Service ${service.serviceName} is not available`);
+      }
+      
+      // Get real price and duration from database (ANTI-FRAUD)
+      const realPrice = parseFloat(serviceData.price.replace('$', ''));
+      const realDuration = serviceData.duration;
+      
+      // Validate subservice if provided
+      let subservicePrice = 0;
+      let subserviceDuration = 0;
+      
+      if (service.subserviceId && serviceData.subservices) {
+        const subservice = serviceData.subservices.find((sub: any) => sub.id === service.subserviceId);
+        if (!subservice) {
+          throw new functions.https.HttpsError('invalid-argument', `Subservice ${service.subserviceId} not found`);
+        }
+        if (!subservice.active) {
+          throw new functions.https.HttpsError('invalid-argument', `Subservice ${service.subserviceName} is not available`);
+        }
+        subservicePrice = parseFloat(subservice.price.replace('$', ''));
+        subserviceDuration = subservice.duration || 0;
+      }
+      
+      const totalServicePrice = realPrice + subservicePrice;
+      const totalServiceDuration = realDuration + subserviceDuration;
+      
+      validatedServices.push({
+        serviceId: service.serviceId,
+        serviceName: serviceData.name,
+        subserviceId: service.subserviceId || null,
+        subserviceName: service.subserviceName || null,
+        duration: totalServiceDuration,
+        price: `$${totalServicePrice.toFixed(2)}`,
+        realPrice: totalServicePrice // For calculations
+      });
+      
+      calculatedDuration += totalServiceDuration;
+      calculatedPrice += totalServicePrice;
     }
     
+    // Use validated services with real prices from database
     const bookingData = {
-      ...validatedData,
+      customerName: validatedData.customerName,
+      customerEmail: validatedData.customerEmail,
+      customerPhone: validatedData.customerPhone,
+      date: validatedData.date,
+      time: validatedData.time,
+      services: validatedServices, // Real data from database
+      totalDuration: calculatedDuration, // Calculated from real data
+      totalPrice: `$${calculatedPrice.toFixed(2)}`, // Calculated from real data
+      notes: validatedData.notes,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       status: 'pending'
@@ -224,6 +294,7 @@ export const createBooking = functions.https.onCall(async (data, context) => {
       const bookingWithId = { ...bookingData, id: bookingRef.id };
       
       // Prepare email using Resend
+      const resend = getResendClient();
       if (resend) {
         const emailTemplate = getBookingConfirmationTemplate(bookingWithId);
         
@@ -370,6 +441,7 @@ export const sendBookingConfirmation = functions.https.onCall(async (data, conte
     }
 
     // Prepare email using Resend
+    const resend = getResendClient();
     if (!resend) {
       throw new functions.https.HttpsError('failed-precondition', 'Email service not configured');
     }
@@ -431,9 +503,10 @@ export const sendBookingReminders = functions.pubsub
       const reminderPromises = bookingsSnapshot.docs.map(async (doc: any) => {
         const booking = doc.data();
         
+        const resend = getResendClient();
         if (!resend) {
           console.error('Resend not configured, skipping reminder email');
-          return;
+          return Promise.resolve(null);
         }
 
         const emailTemplate = getBookingReminderTemplate(booking);
@@ -463,19 +536,22 @@ export const updateBookingStatus = functions.firestore
     const after = change.after.data();
 
     // If status changed, send status update email
-    if (before.status !== after.status && resend) {
-      try {
-        const emailTemplate = getBookingStatusUpdateTemplate(after, after.status);
-        
-        await resend.emails.send({
-          from: "D'Galú Salón <noreply@dgalu.com>",
-          to: [after.customerEmail],
-          subject: emailTemplate.subject,
-          html: emailTemplate.html,
-          text: emailTemplate.text
-        });
-      } catch (error) {
-        console.error('Error sending status update email:', error);
+    if (before.status !== after.status) {
+      const resend = getResendClient();
+      if (resend) {
+        try {
+          const emailTemplate = getBookingStatusUpdateTemplate(after, after.status);
+          
+          await resend.emails.send({
+            from: "D'Galú Salón <noreply@dgalu.com>",
+            to: [after.customerEmail],
+            subject: emailTemplate.subject,
+            html: emailTemplate.html,
+            text: emailTemplate.text
+          });
+        } catch (error) {
+          console.error('Error sending status update email:', error);
+        }
       }
     }
   });

@@ -208,6 +208,25 @@
   margin-bottom: 2rem;
 }
 
+/* Asegurar que todas las tarjetas tengan la misma altura de imagen */
+.products-grid > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.products-grid > div > .relative {
+  height: 144px !important;
+  min-height: 144px !important;
+  max-height: 144px !important;
+  overflow: hidden;
+}
+
+.products-grid > div > .relative img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
 /* Tarjetas de producto con efecto cristal */
 .product-card-glass {
   background: var(--glass-bg);

@@ -34,6 +34,11 @@ const MENU_CONFIG = [
     allowedRoles: [ROLES.ADMIN, ROLES.MANAGER],
   },
   {
+    id: "gallery",
+    label: "Galería",
+    allowedRoles: [ROLES.ADMIN, ROLES.MANAGER],
+  },
+  {
     id: "academy",
     label: "Academia",
     allowedRoles: [ROLES.ADMIN, ROLES.STUDENT],

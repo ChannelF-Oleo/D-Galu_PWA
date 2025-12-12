@@ -18,3 +18,24 @@
 .stat-trend {
   @apply text-xs text-green-500 flex items-center gap-1;
 }
+
+/* =========================================
+   DARK THEME SUPPORT
+   ========================================= */
+.admin-layout.dark-theme .stat-card-container {
+  background: rgba(31, 41, 55, 0.8);
+  border-color: rgba(75, 85, 99, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.admin-layout.dark-theme .stat-title {
+  color: #9ca3af;
+}
+
+.admin-layout.dark-theme .stat-value {
+  color: #f9fafb;
+}
+
+.admin-layout.dark-theme .stat-trend {
+  color: #34d399;
+}

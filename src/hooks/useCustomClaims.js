@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { refreshUserClaims } from '../services/bookingService';
+import { forceTokenRefresh } from '../utils/tokenRefresh';
 
 /**
  * Custom hook to manage user custom claims
@@ -44,12 +45,14 @@ export const useCustomClaims = () => {
       setLoading(true);
       setError(null);
       
-      // Call Cloud Function to refresh claims
+      // Call Cloud Function to refresh claims in backend
       await refreshUserClaims();
       
-      // Get fresh token with updated claims
-      const token = await user.getIdTokenResult(true);
-      setClaims(token.claims);
+      // Force token refresh to get updated claims
+      const token = await forceTokenRefresh();
+      if (token) {
+        setClaims(token.claims);
+      }
       
     } catch (err) {
       console.error('Error refreshing claims:', err);

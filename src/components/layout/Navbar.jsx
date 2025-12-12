@@ -4,14 +4,12 @@ import { Menu, X, Calendar, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NotificationBell from "../common/NotificationBell";
 import CartIcon from "../cart/CartIcon";
-import ShoppingCart from "../cart/ShoppingCart";
 import "../../styles/Navbar.css";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -52,8 +50,8 @@ const Navbar = () => {
             {/* NOTIFICACIONES */}
             <NotificationBell />
 
-            {/* CARRITO */}
-            <CartIcon onClick={() => setIsCartOpen(true)} />
+            {/* CARRITO - Usa el contexto directamente */}
+            <CartIcon />
 
             {/* CTA DESKTOP */}
             <button
@@ -100,9 +98,9 @@ const Navbar = () => {
             </button>
           ))}
 
-          {/* CARRITO MOBILE */}
+          {/* CARRITO MOBILE - Usa el contexto directamente */}
           <div className="flex items-center justify-center py-2">
-            <CartIcon onClick={() => setIsCartOpen(true)} />
+            <CartIcon />
           </div>
 
           {/* CTA MOBILE */}
@@ -131,11 +129,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Carrito de Compras */}
-      <ShoppingCart 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
-      />
+      {/* El carrito se renderiza globalmente en App.jsx */}
     </nav>
   );
 };

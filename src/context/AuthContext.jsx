@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
@@ -8,10 +8,11 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
 import { ErrorHandler } from "../utils/ErrorHandler";
 import { ROLES, hasPermission } from "../utils/rolePermissions";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 
 const AuthContext = createContext();
 
@@ -239,66 +240,103 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    let profileUnsubscribe = null;
+    
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       try {
         setLoading(true);
         
         if (currentUser) {
-          // Si hay usuario logueado, buscamos su perfil completo en Firestore
-          let profile = await getUserProfile(currentUser.uid);
-          
-          // Si no existe perfil, esperar un poco por la Cloud Function
-          if (!profile) {
-            console.log('Profile not found, waiting for Cloud Function...');
-            // Esperar 2 segundos y volver a intentar
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            profile = await getUserProfile(currentUser.uid);
-            
-            // Si aún no existe, crear uno como fallback
-            if (!profile) {
-              console.warn('Cloud Function failed - creating profile as fallback');
-              profile = await createUserProfile(currentUser.uid, {
-                email: currentUser.email,
-                displayName: currentUser.displayName || currentUser.email.split('@')[0]
-              });
-            }
+          // Limpiar listener anterior si existe
+          if (profileUnsubscribe) {
+            profileUnsubscribe();
           }
           
-          // Combinamos el objeto de Auth con los datos completos de Firestore
-          const completeUser = {
-            uid: currentUser.uid,
-            email: currentUser.email,
-            emailVerified: currentUser.emailVerified,
-            ...profile // Incluye role, displayName, phone, avatar, etc.
-          };
-          
-          setUser(completeUser);
+          // SOLUCIÓN REAL AL RACE CONDITION: Usar onSnapshot para esperar el perfil
+          profileUnsubscribe = onSnapshot(
+            doc(db, "users", currentUser.uid),
+            (profileDoc) => {
+              try {
+                if (profileDoc.exists()) {
+                  const profile = profileDoc.data();
+                  
+                  // Verificar que el perfil esté completo (tiene rol)
+                  if (profile.role) {
+                    const completeUser = {
+                      uid: currentUser.uid,
+                      email: currentUser.email,
+                      emailVerified: currentUser.emailVerified,
+                      ...profile
+                    };
+                    
+                    setUser(completeUser);
+                    setLoading(false);
+                  } else {
+                    // Perfil existe pero está incompleto, seguir esperando
+                    console.log('Profile exists but incomplete, waiting for Cloud Function to finish...');
+                  }
+                } else {
+                  // Perfil no existe, mostrar estado de carga con mensaje específico
+                  console.log('Profile not found, waiting for Cloud Function to create it...');
+                  setUser({
+                    uid: currentUser.uid,
+                    email: currentUser.email,
+                    emailVerified: currentUser.emailVerified,
+                    displayName: currentUser.displayName || currentUser.email.split('@')[0],
+                    isProfileLoading: true // Flag especial para mostrar "Preparando tu cuenta..."
+                  });
+                }
+              } catch (err) {
+                console.error('Error in profile snapshot:', err);
+                setError(ErrorHandler.handle(err, 'profileSnapshot'));
+                setLoading(false);
+              }
+            },
+            (error) => {
+              console.error('Profile snapshot error:', error);
+              
+              // Fallback: crear perfil manualmente si el listener falla
+              createUserProfile(currentUser.uid, {
+                email: currentUser.email,
+                displayName: currentUser.displayName || currentUser.email.split('@')[0]
+              }).then((profile) => {
+                const completeUser = {
+                  uid: currentUser.uid,
+                  email: currentUser.email,
+                  emailVerified: currentUser.emailVerified,
+                  ...profile
+                };
+                setUser(completeUser);
+              }).catch((fallbackError) => {
+                console.error('Fallback profile creation failed:', fallbackError);
+                setError(ErrorHandler.handle(fallbackError, 'fallbackProfileCreation'));
+              }).finally(() => {
+                setLoading(false);
+              });
+            }
+          );
         } else {
+          // Usuario no logueado
+          if (profileUnsubscribe) {
+            profileUnsubscribe();
+            profileUnsubscribe = null;
+          }
           setUser(null);
+          setLoading(false);
         }
       } catch (err) {
-        console.error('Error loading user profile:', err);
-        const errorState = ErrorHandler.handle(err, 'loadUserProfile');
-        setError(errorState);
-        
-        // En caso de error, mantenemos solo los datos básicos de Auth
-        if (currentUser) {
-          setUser({
-            uid: currentUser.uid,
-            email: currentUser.email,
-            emailVerified: currentUser.emailVerified,
-            displayName: currentUser.displayName || currentUser.email.split('@')[0],
-            role: ROLES.CUSTOMER || 'customer'
-          });
-        } else {
-          setUser(null);
-        }
-      } finally {
+        console.error('Error in auth state change:', err);
+        setError(ErrorHandler.handle(err, 'authStateChange'));
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+      }
+    };
   }, []);
 
   return (
@@ -324,7 +362,14 @@ export const AuthProvider = ({ children }) => {
       // Función para obtener roles disponibles
       getAvailableRoles: () => Object.values(ROLES)
     }}>
-      {!loading && children}
+      {loading ? (
+        <LoadingSpinner 
+          fullScreen 
+          text={user?.isProfileLoading ? "Preparando tu cuenta..." : "Verificando autenticación..."} 
+        />
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

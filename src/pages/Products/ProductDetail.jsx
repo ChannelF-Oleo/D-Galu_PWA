@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
@@ -53,9 +53,9 @@ const ProductDetail = () => {
     }
   }, [id]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (event) => {
     if (product && quantity > 0) {
-      addItem(product, quantity);
+      addItem(product, quantity, event);
     }
   };
 

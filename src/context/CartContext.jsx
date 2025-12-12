@@ -10,7 +10,9 @@ const CART_ACTIONS = {
   REMOVE_ITEM: 'REMOVE_ITEM',
   UPDATE_QUANTITY: 'UPDATE_QUANTITY',
   CLEAR_CART: 'CLEAR_CART',
-  LOAD_CART: 'LOAD_CART'
+  LOAD_CART: 'LOAD_CART',
+  TOGGLE_CART: 'TOGGLE_CART',
+  SET_CART_OPEN: 'SET_CART_OPEN'
 };
 
 // Reducer del carrito
@@ -74,7 +76,22 @@ const cartReducer = (state, action) => {
     case CART_ACTIONS.LOAD_CART: {
       return {
         ...state,
-        items: action.payload.items || []
+        items: action.payload.items || [],
+        isOpen: action.payload.isOpen || false
+      };
+    }
+
+    case CART_ACTIONS.TOGGLE_CART: {
+      return {
+        ...state,
+        isOpen: !state.isOpen
+      };
+    }
+
+    case CART_ACTIONS.SET_CART_OPEN: {
+      return {
+        ...state,
+        isOpen: action.payload.isOpen
       };
     }
 
@@ -85,7 +102,8 @@ const cartReducer = (state, action) => {
 
 // Estado inicial
 const initialState = {
-  items: []
+  items: [],
+  isOpen: false
 };
 
 // Hook personalizado para usar el carrito
@@ -122,11 +140,36 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('dgalu-cart', JSON.stringify(state));
   }, [state]);
 
-  // Funciones del carrito
-  const addItem = (product, quantity = 1) => {
+  // Funciones del carrito - con debounce para evitar doble click
+  const addItemRef = React.useRef(false);
+  
+  const addItem = (product, quantity = 1, event = null) => {
+    // Prevenir propagación de eventos si se proporciona
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    // Prevenir doble ejecución (debounce simple)
+    if (addItemRef.current) {
+      return;
+    }
+    addItemRef.current = true;
+    
+    // Reset después de 300ms
+    setTimeout(() => {
+      addItemRef.current = false;
+    }, 300);
+    
     dispatch({
       type: CART_ACTIONS.ADD_ITEM,
       payload: { product, quantity }
+    });
+
+    // Auto-abrir carrito después de agregar item
+    dispatch({
+      type: CART_ACTIONS.SET_CART_OPEN,
+      payload: { isOpen: true }
     });
   };
 
@@ -150,6 +193,19 @@ export const CartProvider = ({ children }) => {
     });
   };
 
+  const toggleCart = () => {
+    dispatch({
+      type: CART_ACTIONS.TOGGLE_CART
+    });
+  };
+
+  const setCartOpen = (isOpen) => {
+    dispatch({
+      type: CART_ACTIONS.SET_CART_OPEN,
+      payload: { isOpen }
+    });
+  };
+
   // Cálculos del carrito
   const getTotalItems = () => {
     return state.items.reduce((total, item) => total + item.quantity, 0);
@@ -170,10 +226,13 @@ export const CartProvider = ({ children }) => {
 
   const value = {
     items: state.items,
+    isOpen: state.isOpen,
     addItem,
     removeItem,
     updateQuantity,
     clearCart,
+    toggleCart,
+    setCartOpen,
     getTotalItems,
     getTotalPrice,
     getItemQuantity,

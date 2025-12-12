@@ -5,13 +5,26 @@ import { ShoppingBag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 const CartIcon = ({ onClick }) => {
-  const { getTotalItems } = useCart();
+  const { getTotalItems, toggleCart } = useCart();
   const itemCount = getTotalItems();
+
+  const handleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Si se proporciona onClick externo, usarlo; si no, usar toggleCart del contexto
+    if (onClick) {
+      onClick();
+    } else {
+      toggleCart();
+    }
+  };
 
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className="topbar__action-btn relative"
+      aria-label={`Carrito de compras${itemCount > 0 ? ` (${itemCount} items)` : ''}`}
     >
       <ShoppingBag size={20} />
       {itemCount > 0 && (

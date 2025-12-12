@@ -2,14 +2,128 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Reglas temporales simples para testing
-    match /{document=**} {
-      allow read, write: if true; // TEMPORAL: Permitir todo para testing
+    
+    // ===== HELPER FUNCTIONS =====
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
     
-    // Reglas específicas para bookings
+    // Check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Get user role from document (simplified)
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Check if user is admin (simplified)
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.get('role', null) == 'admin') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         getUserRole() == 'admin')
+      );
+    }
+    
+    // Check if user is staff or above
+    function isStaffOrAbove() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         getUserRole() in ['admin', 'manager', 'staff'])
+      );
+    }
+
+    // ===== USERS COLLECTION =====
+    match /users/{userId} {
+      // Admin can do everything, users can read/update their own profile
+      allow read, write: if isAdmin() || isOwner(userId);
+      allow create: if isAuthenticated();
+    }
+
+    // ===== SERVICES COLLECTION =====
+    match /services/{serviceId} {
+      // Public read access, admin can write
+      allow read: if true;
+      allow write: if isAdmin() || isStaffOrAbove();
+    }
+
+    // ===== PRODUCTS COLLECTION =====
+    match /products/{productId} {
+      // Public read access, admin can write
+      allow read: if true;
+      allow write: if isAdmin() || isStaffOrAbove();
+    }
+
+    // ===== BOOKINGS COLLECTION =====
     match /bookings/{bookingId} {
-      allow read, write: if true; // TEMPORAL: Permitir todo para testing
+      // Admin can do everything, authenticated users can read/create
+      allow read, write: if isAdmin();
+      allow read, create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isOwner(resource.data.get('userId', '')) || isStaffOrAbove());
+    }
+
+    // ===== COURSES COLLECTION =====
+    match /courses/{courseId} {
+      // Public read access, admin can write
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ===== COURSE ENROLLMENTS =====
+    match /course_enrollments/{enrollmentId} {
+      // Admin can do everything, users can manage their own enrollments
+      allow read, write: if isAdmin();
+      allow read, create: if isAuthenticated();
+      allow update: if isAuthenticated() && isOwner(resource.data.get('userId', ''));
+    }
+
+    // ===== GALLERY COLLECTION =====
+    match /gallery/{imageId} {
+      // Public read access, staff can write
+      allow read: if true;
+      allow write: if isAdmin() || isStaffOrAbove();
+    }
+
+    // ===== NOTIFICATIONS COLLECTION =====
+    match /notifications/{notificationId} {
+      // Admin can do everything, authenticated users can read
+      allow read, write: if isAdmin();
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated(); // Allow users to mark as read
+    }
+
+    // ===== SYSTEM LOGS COLLECTION =====
+    match /system_logs/{logId} {
+      // Admin can read, system can create
+      allow read: if isAdmin();
+      allow create: if true; // Cloud Functions need to create logs
+      allow write: if isAdmin();
+    }
+
+    // ===== STUDENTS COLLECTION =====
+    match /students/{studentId} {
+      // Admin can do everything, students can read their own data
+      allow read, write: if isAdmin();
+      allow read: if isAuthenticated() && isOwner(resource.data.get('userId', ''));
+    }
+
+    // ===== EMAIL LOGS COLLECTION =====
+    match /email_logs/{logId} {
+      // Admin can read, system can create
+      allow read: if isAdmin();
+      allow create: if true; // Cloud Functions need to create logs
+      allow write: if isAdmin();
+    }
+
+    // ===== DEFAULT FALLBACK =====
+    // Admin has access to everything as fallback
+    match /{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

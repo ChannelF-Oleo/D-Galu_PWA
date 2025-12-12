@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { LogOut, X, Sun, Moon, MoreHorizontal } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext";
 import "./Sidebar.css";
 
 const Sidebar = ({ 
@@ -11,35 +12,8 @@ const Sidebar = ({
   isSidebarCollapsed,
   onLogout 
 }) => {
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const { toggleTheme, isDark } = useTheme();
   const [showExpandedMenu, setShowExpandedMenu] = useState(false);
-
-  // Cargar tema desde localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('admin-theme');
-    if (savedTheme) {
-      setIsDarkTheme(savedTheme === 'dark');
-    }
-  }, []);
-
-  // Aplicar tema al documento
-  useEffect(() => {
-    const adminLayout = document.querySelector('.admin-layout');
-    if (adminLayout) {
-      if (isDarkTheme) {
-        adminLayout.classList.remove('light-theme');
-        adminLayout.classList.add('dark-theme');
-      } else {
-        adminLayout.classList.remove('dark-theme');
-        adminLayout.classList.add('light-theme');
-      }
-    }
-    localStorage.setItem('admin-theme', isDarkTheme ? 'dark' : 'light');
-  }, [isDarkTheme]);
-
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
-  };
 
   // Items principales para móvil (primeros 3 + expansión)
   const mobileMainItems = menuItems.slice(0, 3);
@@ -55,10 +29,12 @@ const Sidebar = ({
       <aside className={`sidebar ${isSidebarOpen ? "open" : ""} ${isSidebarCollapsed ? "collapsed" : ""}`}>
         {/* Cabecera */}
         <div className="sidebar-header">
-          <h2 className="sidebar-logo">
-            {isSidebarCollapsed ? "D'" : "D'Galú"}
+          <div className="sidebar-logo-container">
+            <h2 className="sidebar-logo">
+              {isSidebarCollapsed ? "D'" : "D'Galú"}
+            </h2>
             {!isSidebarCollapsed && <span className="sidebar-subtitle">Admin</span>}
-          </h2>
+          </div>
           {/* Botón cerrar solo visible en móvil */}
           <button className="sidebar-close-btn" onClick={() => setIsSidebarOpen(false)}>
             <X size={24} />
@@ -137,14 +113,14 @@ const Sidebar = ({
           <button 
             onClick={toggleTheme}
             className="nav-item theme-btn"
-            title={isSidebarCollapsed ? (isDarkTheme ? "Tema Claro" : "Tema Oscuro") : ""}
+            title={isSidebarCollapsed ? (isDark ? "Tema Claro" : "Tema Oscuro") : ""}
           >
             <div className="nav-icon-wrapper">
-              {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />}
+              {isDark ? <Sun size={20} /> : <Moon size={20} />}
             </div>
             {!isSidebarCollapsed && (
               <span className="nav-label">
-                {isDarkTheme ? "Tema Claro" : "Tema Oscuro"}
+                {isDark ? "Tema Claro" : "Tema Oscuro"}
               </span>
             )}
           </button>
@@ -197,9 +173,9 @@ const Sidebar = ({
               {/* Opciones adicionales en el menú expandido */}
               <button onClick={toggleTheme} className="mobile-expanded-item">
                 <div className="nav-icon-wrapper">
-                  {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />}
+                  {isDark ? <Sun size={20} /> : <Moon size={20} />}
                 </div>
-                <span>{isDarkTheme ? "Tema Claro" : "Tema Oscuro"}</span>
+                <span>{isDark ? "Tema Claro" : "Tema Oscuro"}</span>
               </button>
               
               <button onClick={onLogout} className="mobile-expanded-item logout">
