@@ -1,0 +1,126 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Funciones de verificación de roles basadas en Firestore
+    function getUserRole() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && getUserRole() == 'admin';
+    }
+    
+    function isManager() {
+      return request.auth != null && getUserRole() == 'manager';
+    }
+    
+    function isStaff() {
+      return request.auth != null && getUserRole() == 'staff';
+    }
+    
+    function isManagerOrAbove() {
+      return request.auth != null && getUserRole() in ['admin', 'manager'];
+    }
+    
+    function isStaffOrAbove() {
+      return request.auth != null && getUserRole() in ['admin', 'manager', 'staff'];
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Permitir lectura pública de todas las imágenes y archivos
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+    
+    // PRODUCTOS - Imágenes de productos
+    match /products/{productId}/{allPaths=**} {
+      allow read: if true; // Lectura pública para mostrar en catálogo
+      allow write: if isManagerOrAbove(); // Manager+ puede gestionar imágenes de productos
+      allow delete: if isAdmin(); // Solo Admin puede eliminar imágenes de productos
+    }
+    
+    // SERVICIOS - Imágenes de servicios
+    match /services/{serviceId}/{allPaths=**} {
+      allow read: if true; // Lectura pública para mostrar servicios
+      allow write: if isManagerOrAbove(); // Manager+ puede gestionar imágenes de servicios
+      allow delete: if isAdmin(); // Solo Admin puede eliminar imágenes de servicios
+    }
+    
+    // USUARIOS - Avatares y archivos personales
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true; // Lectura pública de avatares
+      allow write: if isManagerOrAbove() || isOwner(userId); // Manager+ o el propio usuario
+      allow delete: if isAdmin() || isOwner(userId); // Admin o el propio usuario
+    }
+    
+    // CURSOS/ACADEMIA - Materiales educativos
+    match /courses/{courseId}/{allPaths=**} {
+      allow read: if true; // Lectura pública para promocionar cursos
+      allow write: if isManagerOrAbove(); // Manager+ puede gestionar contenido de cursos
+      allow delete: if isAdmin(); // Solo Admin puede eliminar archivos de cursos
+    }
+    
+    // CERTIFICADOS - Documentos de graduación
+    match /certificates/{userId}/{allPaths=**} {
+      allow read: if isStaffOrAbove() || isOwner(userId); // Staff+ o el propio usuario
+      allow write: if isManagerOrAbove(); // Manager+ puede generar certificados
+      allow delete: if isAdmin(); // Solo Admin puede eliminar certificados
+    }
+    
+    // PROMOCIONES - Imágenes de marketing
+    match /promotions/{promotionId}/{allPaths=**} {
+      allow read: if true; // Lectura pública para mostrar promociones
+      allow write: if isManagerOrAbove(); // Manager+ puede gestionar promociones
+      allow delete: if isManagerOrAbove(); // Manager+ puede eliminar promociones
+    }
+    
+    // GALERÍA - Fotos del salón y trabajos realizados
+    match /gallery/{allPaths=**} {
+      allow read: if true; // Lectura pública para mostrar trabajos
+      allow write: if isStaffOrAbove(); // Staff+ puede subir fotos de trabajos
+      allow delete: if isManagerOrAbove(); // Manager+ puede eliminar fotos
+    }
+    
+    // REPORTES - Documentos de análisis
+    match /reports/{allPaths=**} {
+      allow read: if isManagerOrAbove(); // Manager+ puede acceder a reportes
+      allow write: if isManagerOrAbove(); // Manager+ puede generar reportes
+      allow delete: if isAdmin(); // Solo Admin puede eliminar reportes
+    }
+    
+    // SISTEMA - Archivos de configuración y backup
+    match /system/{allPaths=**} {
+      allow read: if isStaffOrAbove(); // Staff+ puede leer archivos del sistema
+      allow write: if isAdmin(); // Solo Admin puede modificar archivos del sistema
+      allow delete: if isAdmin(); // Solo Admin puede eliminar archivos del sistema
+    }
+    
+    // TEMPORALES - Archivos de trabajo temporal
+    match /temp/{userId}/{allPaths=**} {
+      allow read, write: if isAuthenticated() && isOwner(userId); // Solo el propio usuario
+      allow delete: if isAuthenticated() && (isOwner(userId) || isManagerOrAbove()); // Usuario o Manager+
+    }
+    
+    // UPLOADS - Área de subida general para staff
+    match /uploads/{allPaths=**} {
+      allow read: if isStaffOrAbove(); // Staff+ puede leer uploads
+      allow write: if isStaffOrAbove(); // Staff+ puede subir archivos
+      allow delete: if isManagerOrAbove(); // Manager+ puede eliminar uploads
+    }
+    
+    // BACKUP - Copias de seguridad
+    match /backup/{allPaths=**} {
+      allow read: if isAdmin(); // Solo Admin puede acceder a backups
+      allow write: if isAdmin(); // Solo Admin puede crear backups
+      allow delete: if isAdmin(); // Solo Admin puede eliminar backups
+    }
+  }
+}

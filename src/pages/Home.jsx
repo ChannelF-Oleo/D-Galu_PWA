@@ -1,11 +1,15 @@
 // src/pages/Home.jsx
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../config/firebase";
 import "../styles/Home.css";
 import { icons } from "../utils/icons";
-// Asegúrate de que esta ruta sea correcta según tu estructura
 import "../styles/Styles.css";
+import ProductsSection from "../components/home/ProductsSection";
+import AcademySection from "../components/home/AcademySection";
+
 
 // Imágenes
 // Asegúrate de que estas rutas sean correctas según tu estructura
@@ -57,22 +61,38 @@ const serviceHighlights = [
   },
 ];
 
-// --- Card de Servicio (ESTRUCTURA DE ICONO ELIMINADA) ---
-const ServiceCard = ({ title, description, imgSrc, href }) => {
+// --- Card de Servicio conectada con Firebase ---
+const ServiceCard = ({ service, fallbackImage }) => {
   const navigate = useNavigate();
 
+  const handleClick = () => {
+    // Navegar directamente al detalle del servicio específico
+    navigate(`/services/${service.id}`);
+  };
+
   return (
-    // Usamos button para mejorar la accesibilidad si toda la card es clickeable
-    <button onClick={() => navigate(href)} className="service-card group">
+    <button onClick={handleClick} className="service-card group">
       {/* Wrapper de Imagen */}
       <div className="card-image-wrapper">
-        <img src={imgSrc} alt={title} className="card-image" loading="lazy" />
+        <img 
+          src={service.image || fallbackImage} 
+          alt={service.name} 
+          className="card-image" 
+          loading="lazy" 
+        />
       </div>
 
-      {/* Contenido de Texto (Se alinea automáticamente debajo de la imagen sin el icono intermedio) */}
+      {/* Contenido de Texto */}
       <div className="card-content">
-        <h3 className="card-title">{title}</h3>
-        <p className="card-desc">{description}</p>
+        <h3 className="card-title">{service.name}</h3>
+        <p className="card-desc">{service.description}</p>
+        
+        {/* Mostrar número de subservicios si existen */}
+        {service.subservices && service.subservices.length > 0 && (
+          <div className="text-sm text-purple-600 mb-2">
+            {service.subservices.length} opciones disponibles
+          </div>
+        )}
 
         <div className="card-link">
           Ver Detalles
@@ -130,22 +150,140 @@ const HeroSection = () => {
   );
 };
 
-// Services Section (Sin cambios)
-const ServicesSection = () => (
-  <section id="servicios" className="services-section">
-    <div className="container">
-      <h2 className="section-title">
-        Nuestros <span className="highlight-text">Servicios Destacados</span>
-      </h2>
+// Services Section conectada con Firebase
+const ServicesSection = () => {
+  const navigate = useNavigate();
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-      <div className="services-grid">
-        {serviceHighlights.map((service, index) => (
-          <ServiceCard key={index} {...service} />
-        ))}
+  // Mapeo de imágenes fallback para servicios conocidos
+  const fallbackImages = {
+    "trenzas": trenzasFoto,
+    "uñas": uñasFoto,
+    "peluqueria": peluqueriaFoto,
+    "extensiones": PosturaFoto,
+    "cejas": CejasFoto,
+    "spa": spaFoto
+  };
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        console.log("Fetching services from Firebase...");
+        const servicesRef = collection(db, "services");
+        // Simplificar la query - quitar el filtro por ahora
+        const querySnapshot = await getDocs(servicesRef);
+        
+        const servicesData = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log("Service found:", doc.id, data);
+          servicesData.push({
+            id: doc.id,
+            ...data
+          });
+        });
+
+        console.log("Total services loaded:", servicesData.length);
+        
+        // Filtrar servicios destacados primero, luego limitar a 3
+        const featuredServices = servicesData.filter(s => s.featured);
+        if (featuredServices.length >= 3) {
+          setServices(featuredServices.slice(0, 3));
+        } else {
+          // Si no hay suficientes destacados, tomar los primeros 3
+          setServices(servicesData.slice(0, 3));
+        }
+      } catch (error) {
+        console.error("Error fetching services:", error);
+        // Fallback a servicios estáticos si hay error
+        console.log("Using fallback static services");
+        setServices([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  const getFallbackImage = (serviceName) => {
+    const name = serviceName.toLowerCase();
+    if (name.includes('trenza')) return fallbackImages.trenzas;
+    if (name.includes('uña')) return fallbackImages.uñas;
+    if (name.includes('peluquer')) return fallbackImages.peluqueria;
+    if (name.includes('extension') || name.includes('peluca')) return fallbackImages.extensiones;
+    if (name.includes('ceja') || name.includes('pestaña')) return fallbackImages.cejas;
+    if (name.includes('spa') || name.includes('masaje')) return fallbackImages.spa;
+    return trenzasFoto; // imagen por defecto
+  };
+
+  if (loading) {
+    return (
+      <section id="servicios" className="services-section">
+        <div className="container">
+          <h2 className="section-title">
+            Nuestros <span className="highlight-text">Servicios Destacados</span>
+          </h2>
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section id="servicios" className="services-section">
+      <div className="container">
+        <h2 className="section-title">
+          Nuestros <span className="highlight-text">Servicios Destacados</span>
+        </h2>
+
+        <div className="services-grid">
+          {services.length > 0 ? (
+            services.map((service) => (
+              <ServiceCard 
+                key={service.id} 
+                service={service}
+                fallbackImage={getFallbackImage(service.name)}
+              />
+            ))
+          ) : (
+            // Fallback a servicios estáticos si no hay datos de Firebase (solo 3)
+            serviceHighlights.slice(0, 3).map((service, index) => (
+              <ServiceCard 
+                key={index} 
+                service={{
+                  id: `fallback-${index}`,
+                  name: service.title,
+                  description: service.description,
+                  image: service.imgSrc
+                }}
+                fallbackImage={service.imgSrc}
+              />
+            ))
+          )}
+        </div>
+
+        {/* Call to action para ver más servicios */}
+        <div className="text-center mt-12">
+          <button
+            onClick={() => navigate('/services')}
+            className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition-all hover:shadow-lg font-semibold"
+          >
+            Ver Catálogo Completo
+            <icons.ArrowRight size={20} />
+          </button>
+          
+          <p className="text-sm text-gray-500 mt-3">
+            Descubre todos nuestros servicios especializados
+          </p>
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 // Secciones Placeholder (Sin cambios)
 const PlaceholderSection = ({ title, IconComponent }) => (
@@ -161,14 +299,14 @@ const PlaceholderSection = ({ title, IconComponent }) => (
 );
 
 const Home = () => (
-  <main>
+  <main className="home-main">
     <HeroSection />
+    <div className="section-divider"></div>
     <ServicesSection />
-    <PlaceholderSection title="Productos" IconComponent={icons.ShoppingBag} />
-    <PlaceholderSection
-      title="D'Galú Academy"
-      IconComponent={icons.GraduationCap}
-    />
+    <div className="section-divider"></div>
+    <ProductsSection />
+    <div className="section-divider"></div>
+    <AcademySection />
   </main>
 );
 

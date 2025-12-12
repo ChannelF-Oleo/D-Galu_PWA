@@ -1,0 +1,168 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Funciones de verificación de roles basadas en documento de usuario
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && getUserRole() == 'admin';
+    }
+    
+    function isManager() {
+      return request.auth != null && getUserRole() == 'manager';
+    }
+    
+    function isStaff() {
+      return request.auth != null && getUserRole() == 'staff';
+    }
+    
+    function isManagerOrAbove() {
+      return request.auth != null && getUserRole() in ['admin', 'manager'];
+    }
+    
+    function isStaffOrAbove() {
+      return request.auth != null && getUserRole() in ['admin', 'manager', 'staff'];
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // PRODUCTOS - Gestión completa para admin/manager
+    match /products/{productId} {
+      allow read: if true; // Lectura pública para clientes
+      allow create: if isManagerOrAbove(); // Admin y Manager pueden crear productos
+      allow update: if isManagerOrAbove(); // Admin y Manager pueden editar productos
+      allow delete: if isAdmin(); // Solo Admin puede eliminar productos
+    }
+    
+    // SERVICIOS - Gestión completa para admin/manager
+    match /services/{serviceId} {
+      allow read: if true; // Lectura pública para clientes
+      allow create: if isManagerOrAbove(); // Admin y Manager pueden crear servicios
+      allow update: if isManagerOrAbove(); // Admin y Manager pueden editar servicios
+      allow delete: if isAdmin(); // Solo Admin puede eliminar servicios
+    }
+    
+    // USUARIOS - Gestión según rol
+    match /users/{userId} {
+      allow read: if isStaffOrAbove() || isOwner(userId); // Staff+ puede leer, usuario puede leer su propio perfil
+      allow create: if isAuthenticated(); // Cualquier usuario autenticado puede crear su perfil
+      allow update: if isManagerOrAbove() || isOwner(userId); // Manager+ o el propio usuario
+      allow delete: if isAdmin(); // Solo Admin puede eliminar usuarios
+    }
+    
+    // RESERVAS/BOOKINGS - Gestión operativa
+    match /bookings/{bookingId} {
+      allow read: if isStaffOrAbove(); // Todo el staff puede ver reservas
+      allow create: if true; // Clientes públicos pueden crear reservas
+      allow update: if isStaffOrAbove(); // Todo el staff puede actualizar estado de reservas
+      allow delete: if isManagerOrAbove(); // Solo Manager+ puede eliminar reservas
+    }
+    
+    // NOTIFICACIONES - Sistema de comunicación interna
+    match /notifications/{notificationId} {
+      allow read: if isStaffOrAbove(); // Todo el staff puede leer notificaciones
+      allow create: if isStaffOrAbove(); // Todo el staff puede crear notificaciones
+      allow update: if isStaffOrAbove(); // Todo el staff puede marcar como leídas
+      allow delete: if isManagerOrAbove(); // Solo Manager+ puede eliminar notificaciones
+    }
+    
+    // CURSOS/ACADEMIA - Gestión educativa
+    match /courses/{courseId} {
+      allow read: if true; // Lectura pública para estudiantes potenciales
+      allow create: if isManagerOrAbove(); // Manager+ puede crear cursos
+      allow update: if isManagerOrAbove(); // Manager+ puede editar cursos
+      allow delete: if isAdmin(); // Solo Admin puede eliminar cursos
+    }
+    
+    // INSCRIPCIONES A CURSOS - Gestión de estudiantes
+    match /course_enrollments/{enrollmentId} {
+      allow read: if isStaffOrAbove() || isOwner(resource.data.userId); // Staff+ o el propio estudiante
+      allow create: if isAuthenticated(); // Usuarios autenticados pueden inscribirse
+      allow update: if isStaffOrAbove(); // Staff+ puede actualizar estado de inscripciones
+      allow delete: if isManagerOrAbove(); // Manager+ puede cancelar inscripciones
+    }
+    
+    // INVENTARIO - Control de stock
+    match /inventory/{itemId} {
+      allow read: if isStaffOrAbove(); // Staff+ puede ver inventario
+      allow create: if isManagerOrAbove(); // Manager+ puede agregar items al inventario
+      allow update: if isStaffOrAbove(); // Staff+ puede actualizar stock (ventas)
+      allow delete: if isAdmin(); // Solo Admin puede eliminar items del inventario
+    }
+    
+    // VENTAS/TRANSACCIONES - Registro financiero
+    match /sales/{saleId} {
+      allow read: if isStaffOrAbove(); // Staff+ puede ver ventas
+      allow create: if isStaffOrAbove(); // Staff+ puede registrar ventas
+      allow update: if isManagerOrAbove(); // Manager+ puede modificar ventas
+      allow delete: if isAdmin(); // Solo Admin puede eliminar ventas
+    }
+    
+    // CONFIGURACIÓN DEL SISTEMA - Ajustes operativos
+    match /settings/{settingId} {
+      allow read: if isStaffOrAbove(); // Staff+ puede leer configuración
+      allow write: if isManagerOrAbove(); // Manager+ puede modificar configuración
+    }
+    
+    // HORARIOS DE TRABAJO - Gestión de disponibilidad
+    match /schedules/{scheduleId} {
+      allow read: if true; // Lectura pública para mostrar disponibilidad
+      allow create: if isManagerOrAbove(); // Manager+ puede crear horarios
+      allow update: if isManagerOrAbove(); // Manager+ puede modificar horarios
+      allow delete: if isAdmin(); // Solo Admin puede eliminar horarios
+    }
+    
+    // PROMOCIONES Y DESCUENTOS - Marketing
+    match /promotions/{promotionId} {
+      allow read: if true; // Lectura pública para clientes
+      allow create: if isManagerOrAbove(); // Manager+ puede crear promociones
+      allow update: if isManagerOrAbove(); // Manager+ puede modificar promociones
+      allow delete: if isManagerOrAbove(); // Manager+ puede eliminar promociones
+    }
+    
+    // REVIEWS/RESEÑAS - Feedback de clientes
+    match /reviews/{reviewId} {
+      allow read: if true; // Lectura pública
+      allow create: if isAuthenticated(); // Usuarios autenticados pueden crear reseñas
+      allow update: if isOwner(resource.data.userId) || isManagerOrAbove(); // Autor o Manager+
+      allow delete: if isManagerOrAbove(); // Manager+ puede eliminar reseñas inapropiadas
+    }
+    
+    // LOGS DEL SISTEMA - Auditoría y debugging
+    match /system_logs/{logId} {
+      allow read: if isAdmin(); // Solo Admin puede ver logs del sistema
+      allow write: if isStaffOrAbove(); // Staff+ puede escribir logs
+    }
+    
+    // LOGS DE EMAIL - Seguimiento de comunicaciones
+    match /email_logs/{logId} {
+      allow read: if isManagerOrAbove(); // Manager+ puede ver logs de email
+      allow write: if isStaffOrAbove(); // Staff+ puede escribir logs de email
+    }
+    
+    // REPORTES - Análisis de negocio
+    match /reports/{reportId} {
+      allow read: if isManagerOrAbove(); // Manager+ puede ver reportes
+      allow write: if isManagerOrAbove(); // Manager+ puede generar reportes
+    }
+    
+    // BACKUP Y DATOS TEMPORALES
+    match /temp/{document=**} {
+      allow read, write: if isAuthenticated(); // Usuarios autenticados para datos temporales
+    }
+    
+    // Fallback: denegar acceso por defecto a cualquier otra colección
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

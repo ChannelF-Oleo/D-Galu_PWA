@@ -3,8 +3,9 @@
  */
 export const ROLES = {
   ADMIN: "admin",
-  MANAGER: "manager",
+  MANAGER: "manager", 
   STAFF: "staff",
+  CUSTOMER: "customer",
   STUDENT: "student",
 };
 

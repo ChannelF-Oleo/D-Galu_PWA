@@ -29,6 +29,8 @@ import {
 } from "firebase/storage";
 import { db, storage } from "../config/firebase"; 
 import { hasPermission } from "../utils/rolePermissions";
+import { validateFormData } from "../utils/validation";
+import { serviceFormSchema } from "../types";
 import "./ServicesView.css";
 
 const ServicesView = ({ userRole }) => {
@@ -51,9 +53,20 @@ const ServicesView = ({ userRole }) => {
     duration: "",
     category: "",
     image: null,
+    subservices: [], // Nuevo: array de subservicios
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  
+  // Estados para subservicios
+  const [showSubserviceForm, setShowSubserviceForm] = useState(false);
+  const [editingSubservice, setEditingSubservice] = useState(null);
+  const [subserviceForm, setSubserviceForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    duration: "20" // Duración por defecto de 20 minutos
+  });
 
   // Cargar servicios
   const fetchServices = useCallback(async () => {
@@ -113,12 +126,96 @@ const ServicesView = ({ userRole }) => {
     setEditingService(null);
     setImagePreview(null);
     setFormData(initialFormState);
+    setShowSubserviceForm(false);
+    setEditingSubservice(null);
+    setSubserviceForm({
+      name: "",
+      description: "",
+      price: "",
+      duration: "20"
+    });
+  };
+
+  // Funciones para manejar subservicios
+  const handleSubserviceInputChange = (e) => {
+    const { name, value } = e.target;
+    setSubserviceForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const addSubservice = () => {
+    if (!subserviceForm.name.trim() || !subserviceForm.price) {
+      alert("Nombre y precio son requeridos para el subservicio");
+      return;
+    }
+
+    const newSubservice = {
+      id: Date.now().toString(), // ID temporal
+      name: subserviceForm.name.trim(),
+      description: subserviceForm.description.trim(),
+      price: parseFloat(subserviceForm.price),
+      duration: parseInt(subserviceForm.duration) || 20
+    };
+
+    if (editingSubservice) {
+      // Editar subservicio existente
+      setFormData(prev => ({
+        ...prev,
+        subservices: prev.subservices.map(sub => 
+          sub.id === editingSubservice.id ? newSubservice : sub
+        )
+      }));
+    } else {
+      // Agregar nuevo subservicio
+      setFormData(prev => ({
+        ...prev,
+        subservices: [...prev.subservices, newSubservice]
+      }));
+    }
+
+    // Resetear formulario de subservicio
+    setSubserviceForm({
+      name: "",
+      description: "",
+      price: "",
+      duration: "20"
+    });
+    setShowSubserviceForm(false);
+    setEditingSubservice(null);
+  };
+
+  const editSubservice = (subservice) => {
+    setSubserviceForm({
+      name: subservice.name,
+      description: subservice.description || "",
+      price: subservice.price.toString(),
+      duration: subservice.duration.toString()
+    });
+    setEditingSubservice(subservice);
+    setShowSubserviceForm(true);
+  };
+
+  const removeSubservice = (subserviceId) => {
+    setFormData(prev => ({
+      ...prev,
+      subservices: prev.subservices.filter(sub => sub.id !== subserviceId)
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.category) {
-      return alert("Completa los campos obligatorios (*)");
+    
+    // Validate form data with Zod
+    const validationResult = validateFormData(serviceFormSchema, {
+      ...formData,
+      price: formData.price || "0",
+      duration: formData.duration || "0",
+    });
+
+    if (!validationResult.success) {
+      const fieldErrors = validationResult.fieldErrors || {};
+      const generalErrors = validationResult.generalErrors || [];
+      const errorMessages = Object.values(fieldErrors).concat(generalErrors);
+      return alert("Errores de validación:\n" + errorMessages.join("\n"));
     }
 
     setUploading(true);
@@ -149,6 +246,7 @@ const ServicesView = ({ userRole }) => {
         duration: parseInt(formData.duration) || 0,
         category: formData.category,
         image: imageUrl,
+        subservices: formData.subservices || [], // Incluir subservicios
         updatedAt: serverTimestamp(),
       };
 
@@ -272,7 +370,11 @@ const ServicesView = ({ userRole }) => {
                     <button
                       onClick={() => {
                         setEditingService(service);
-                        setFormData({ ...service, image: service.image });
+                        setFormData({ 
+                          ...service, 
+                          image: service.image,
+                          subservices: service.subservices || [] // Cargar subservicios existentes
+                        });
                         setImagePreview(service.image);
                         setShowModal(true);
                       }}
@@ -433,6 +535,162 @@ const ServicesView = ({ userRole }) => {
                     placeholder="Detalles del servicio..."
                   />
                 </div>
+              </div>
+
+              {/* Sección de Subservicios */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Subservicios ({formData.subservices?.length || 0})
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowSubserviceForm(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                  >
+                    <Plus size={16} />
+                    Agregar
+                  </button>
+                </div>
+
+                {/* Lista de subservicios existentes */}
+                {formData.subservices && formData.subservices.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    {formData.subservices.map((subservice) => (
+                      <div key={subservice.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{subservice.name}</div>
+                          <div className="text-sm text-gray-600">
+                            ${subservice.price} • {subservice.duration} min
+                            {subservice.description && ` • ${subservice.description}`}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => editSubservice(subservice)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeSubservice(subservice.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Formulario de subservicio */}
+                {showSubserviceForm && (
+                  <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-gray-900">
+                        {editingSubservice ? 'Editar Subservicio' : 'Nuevo Subservicio'}
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSubserviceForm(false);
+                          setEditingSubservice(null);
+                          setSubserviceForm({ name: "", description: "", price: "", duration: "20" });
+                        }}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nombre *
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={subserviceForm.name}
+                          onChange={handleSubserviceInputChange}
+                          className="w-full p-2 border rounded-lg text-sm"
+                          placeholder="Ej: Manicura básica"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Precio *
+                        </label>
+                        <input
+                          type="number"
+                          name="price"
+                          value={subserviceForm.price}
+                          onChange={handleSubserviceInputChange}
+                          className="w-full p-2 border rounded-lg text-sm"
+                          placeholder="0.00"
+                          step="0.01"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Duración (min)
+                        </label>
+                        <input
+                          type="number"
+                          name="duration"
+                          value={subserviceForm.duration}
+                          onChange={handleSubserviceInputChange}
+                          className="w-full p-2 border rounded-lg text-sm"
+                          placeholder="20"
+                          min="5"
+                          step="5"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Descripción
+                        </label>
+                        <input
+                          type="text"
+                          name="description"
+                          value={subserviceForm.description}
+                          onChange={handleSubserviceInputChange}
+                          className="w-full p-2 border rounded-lg text-sm"
+                          placeholder="Descripción opcional"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={addSubservice}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                      >
+                        {editingSubservice ? 'Actualizar' : 'Agregar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSubserviceForm(false);
+                          setEditingSubservice(null);
+                          setSubserviceForm({ name: "", description: "", price: "", duration: "20" });
+                        }}
+                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex gap-3">

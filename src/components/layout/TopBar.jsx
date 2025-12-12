@@ -1,5 +1,5 @@
-import React from "react";
-import { Menu, ChevronLeft, ChevronRight, Bell } from "lucide-react";
+import { Menu, ChevronLeft, ChevronRight } from "lucide-react";
+import NotificationBell from "../common/NotificationBell";
 import "./TopBar.css";
 
 const TopBar = ({
@@ -10,6 +10,7 @@ const TopBar = ({
   isSidebarCollapsed,
   toggleSidebarCollapse,
 }) => {
+
   // 1. Título Dinámico: Busca el label correspondiente al tab activo
   const currentTitle = menuItems.find((item) => item.id === activeTab)?.label || "Panel de Control";
 
@@ -45,11 +46,9 @@ const TopBar = ({
 
       {/* SECCIÓN DERECHA: Perfil y Acciones */}
       <div className="topbar__right">
-        {/* Botón de Notificaciones (Opcional pero recomendado) */}
-        <button className="topbar__action-btn">
-          <Bell size={20} />
-          <span className="topbar__badge"></span>
-        </button>
+        {/* Componente de Notificaciones */}
+        <NotificationBell />
+
 
         <div className="topbar__divider"></div>
 
@@ -70,6 +69,9 @@ const TopBar = ({
           </div>
         </div>
       </div>
+
+      
+
     </header>
   );
 };

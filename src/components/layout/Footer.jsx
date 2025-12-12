@@ -13,7 +13,7 @@ import {
   LogIn,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import "../styles/Styles.css";
+import "../../styles/Styles.css";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -26,6 +26,15 @@ const Footer = () => {
     { name: "Blog", path: "/blog" }, // futura página
     { name: "Login / Admin", path: "/login" },
   ];
+
+  // Función para navegar y hacer scroll al top
+  const handleNavigation = (path) => {
+    navigate(path);
+    // Scroll suave al top después de la navegación
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
 
   return (
     <footer className="bg-gray-800 pt-16 pb-8 border-t-4 border-rose-400 text-gray-300">
@@ -80,7 +89,7 @@ const Footer = () => {
               {quickLinks.map((link, index) => (
                 <li key={index}>
                   <button
-                    onClick={() => navigate(link.path)}
+                    onClick={() => handleNavigation(link.path)}
                     className="hover:text-rose-400 transition block text-left"
                   >
                     {link.name}

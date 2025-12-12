@@ -1,6 +1,6 @@
 // src/utils/seedServices.js
 import { db } from "../config/firebase";
-import { collection, doc, writeBatch } from "firebase/firestore";
+import { doc, writeBatch, serverTimestamp } from "firebase/firestore";
 
 // Tu lista maestra de servicios convertida a datos
 const servicesData = [
@@ -10,19 +10,19 @@ const servicesData = [
     description: "Cortes, color, tratamientos y estilismo profesional.",
     image: "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=800&q=80", // Imagen placeholder
     subservices: [
-      { name: "Corte de cabello (regular, capas, bob, pixie)", price: 0 },
+      { name: "Corte de cabello", price: 0 },
       { name: "Lavado + acondicionador", price: 0 },
-      { name: "Secado / Brushing / Blowout", price: 0 },
-      { name: "Planchado / Ondas / Rizos definidos", price: 0 },
-      { name: "Peinados para eventos (recogidos, glam waves)", price: 0 },
-      { name: "Tintes (color completo, retoque, baño)", price: 0 },
-      { name: "Mechas (Highlights, Balayage, Babylights)", price: 0 },
-      { name: "Tratamientos (Hidratación, Botox, Keratina)", price: 0 },
-      { name: "Alisados químicos / permanentes", price: 0 },
-      { name: "Extensiones (Colocación, mantenimiento)", price: 0 },
-      { name: "Trenzas africanas (Box braids, Cornrows)", price: 0 },
+      { name: "Secado / Brushing", price: 0 },
+      { name: "Planchado / Ondas", price: 0 },
+      { name: "Peinados para eventos", price: 0 },
+      { name: "Tintes", price: 0 },
+      { name: "Mechas", price: 0 },
+      { name: "Tratamientos capilares", price: 0 },
+      { name: "Alisados químicos", price: 0 },
+      { name: "Extensiones", price: 0 },
+      { name: "Trenzas africanas", price: 0 },
       { name: "Peinados protectores", price: 0 },
-      { name: "Pelucas (Instalación y estilismo)", price: 0 }
+      { name: "Pelucas", price: 0 }
     ]
   },
   {
@@ -143,16 +143,38 @@ export const uploadServices = async () => {
 
   servicesData.forEach((service) => {
     const docRef = doc(db, "services", service.id);
-    batch.set(docRef, service);
+    
+    // Procesar subservicios para agregar IDs únicos y duración
+    const processedSubservices = service.subservices.map((sub, index) => ({
+      id: `${service.id}-sub-${index + 1}`,
+      name: sub.name,
+      price: sub.price || 0,
+      duration: sub.duration || 20,
+      description: sub.description || ""
+    }));
+    
+    // Agregar campos adicionales necesarios
+    const serviceData = {
+      ...service,
+      subservices: processedSubservices,
+      category: service.name.split(' ')[0].toLowerCase(), // Extraer categoría del nombre
+      basePrice: 0, // Precio base por defecto
+      duration: 60, // Duración por defecto
+      isActive: true,
+      beforeAfterPhotos: [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    batch.set(docRef, serviceData);
   });
 
   try {
     await batch.commit();
     console.log("¡Servicios cargados exitosamente!");
-    alert("✅ Base de datos actualizada con todos los servicios.");
+    return { success: true, message: "✅ Base de datos actualizada con todos los servicios." };
   } catch (error) {
     console.error("Error subiendo servicios:", error);
-    alert("❌ Error: " + error.message);
+    throw new Error(`Error subiendo servicios: ${error.message}`);
   }
 };
 

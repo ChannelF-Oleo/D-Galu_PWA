@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas temporales simples para testing
+    match /{document=**} {
+      allow read, write: if true; // TEMPORAL: Permitir todo para testing
+    }
+    
+    // Reglas específicas para bookings
+    match /bookings/{bookingId} {
+      allow read, write: if true; // TEMPORAL: Permitir todo para testing
+    }
+  }
+}

@@ -41,7 +41,7 @@ const ServicesList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 pt-20 pb-12 px-4 sm:px-6 lg:px-8">
       {/* HEADER */}
       <div className="text-center max-w-3xl mx-auto mb-16">
         <span className="text-rose-500 font-semibold tracking-wider uppercase text-sm">

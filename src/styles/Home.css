@@ -218,7 +218,7 @@ html {
    5. Servicios
    ========================================= */
 .services-section {
-  padding: 4rem 0;
+  padding: 6rem 0 4rem 0; /* Aumentar padding-top para evitar colisión con navbar */
   background-color: var(--color-bg-light);
 }
 
@@ -270,7 +270,7 @@ html {
 }
 
 .card-image-wrapper {
-  height: 200px;
+  height: 160px;
   width: 100%;
   overflow: hidden;
 }
@@ -287,7 +287,7 @@ html {
 }
 
 .card-content {
-  padding: 1.5rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -296,7 +296,7 @@ html {
 }
 
 .card-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--color-text-dark);
   margin-bottom: 0.5rem;
@@ -305,9 +305,9 @@ html {
 
 .card-desc {
   color: var(--color-text-gray);
-  line-height: 1.5;
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
   flex-grow: 1;
   font-family: sans-serif;
 }
@@ -408,5 +408,92 @@ html {
 @media (min-width: 1536px) {
   .container {
     max-width: var(--container-width-2xl);
+  }
+}
+
+/* =========================================
+   7. Transiciones entre secciones
+   ========================================= */
+
+.home-main {
+  overflow-x: hidden;
+}
+
+.section-divider {
+  height: 60px;
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-light) 0%,
+    rgba(244, 63, 94, 0.02) 50%,
+    var(--color-bg-light) 100%
+  );
+  position: relative;
+}
+
+.section-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-primary) 50%,
+    transparent 100%
+  );
+  opacity: 0.3;
+}
+
+/* Animaciones de entrada para secciones */
+.services-section,
+.products-section,
+.academy-section {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.services-section {
+  animation-delay: 0.2s;
+}
+
+.products-section {
+  animation-delay: 0.4s;
+}
+
+.academy-section {
+  animation-delay: 0.6s;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Efecto parallax sutil en scroll */
+@media (prefers-reduced-motion: no-preference) {
+  .services-section {
+    background-attachment: fixed;
+  }
+}
+
+/* Responsive para transiciones */
+@media (max-width: 768px) {
+  .section-divider {
+    height: 40px;
+  }
+  
+  .section-divider::before {
+    width: 60px;
+    height: 1px;
   }
 }

@@ -11,14 +11,15 @@ import {
 } from "lucide-react";
 
 // Importar componentes
-import Sidebar from "../components/Sidebar";
-import TopBar from "../components/TopBar";
+import Sidebar from "../components/layout/Sidebar";
+import TopBar from "../components/layout/TopBar";
 import DashboardView from "./DashboardView";
 import ServicesView from "./ServicesView";
 import BookingsView from "./BookingsView";
 import ProductsView from "./ProductsView";
 import AcademyView from "./AcademyView";
-import UsersView from "./UsersView"; 
+import UsersView from "./UsersView";
+import NotificationsInbox from "./NotificationsInbox"; 
 
 // Importar utilidades de roles
 import { getMenuItemsByRole } from "../utils/rolePermissions";
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showNotificationsInbox, setShowNotificationsInbox] = useState(false);
 
   // Obtener rol del usuario (debe venir de user.role en tu AuthContext)
   // Por defecto usamos 'admin', ajusta según tu estructura
@@ -72,6 +74,16 @@ const AdminDashboard = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  // Escuchar evento personalizado para abrir notificaciones
+  React.useEffect(() => {
+    const handleOpenNotifications = () => {
+      setShowNotificationsInbox(true);
+    };
+
+    window.addEventListener('openNotificationsInbox', handleOpenNotifications);
+    return () => window.removeEventListener('openNotificationsInbox', handleOpenNotifications);
+  }, []);
+
   // Renderizado del contenido principal según la pestaña activa
   const renderContent = () => {
     switch (activeTab) {
@@ -101,6 +113,43 @@ const AdminDashboard = () => {
         );
     }
   };
+
+  // Si se está mostrando el inbox de notificaciones, renderizarlo
+  if (showNotificationsInbox) {
+    return (
+      <div className="admin-layout">
+        <Sidebar
+          menuItems={menuItems}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onLogout={handleLogout}
+        />
+
+        <div
+          className={`admin-layout__main ${
+            isSidebarCollapsed ? "admin-layout__main--expanded" : ""
+          }`}
+        >
+          <TopBar
+            user={user}
+            activeTab="notifications"
+            menuItems={[...menuItems, { id: 'notifications', label: 'Notificaciones' }]}
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={toggleSidebar}
+            isSidebarCollapsed={isSidebarCollapsed}
+            toggleSidebarCollapse={toggleSidebarCollapse}
+          />
+
+          <main className="admin-layout__content">
+            <NotificationsInbox onBack={() => setShowNotificationsInbox(false)} />
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   // En AdminDashboard.jsx, antes del return
 console.log("--- DEBUG ADMIN DASHBOARD ---");

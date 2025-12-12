@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { hasPermission } from "../utils/rolePermissions";
+import BookingDetailModal from "../components/bookings/BookingDetailModal";
 import "./BookingsView.css";
 
 const BookingsView = ({ userRole }) => {
@@ -29,6 +30,8 @@ const BookingsView = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const canManage = hasPermission(userRole, "canManageBookings");
 
@@ -39,29 +42,52 @@ const BookingsView = ({ userRole }) => {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const bookingsRef = collection(db, "reservations");
+      const bookingsRef = collection(db, "bookings");
       
-      // Convertir fecha seleccionada a timestamps
-      const selectedDateObj = new Date(selectedDate);
-      const startOfDay = new Date(selectedDateObj.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(selectedDateObj.setHours(23, 59, 59, 999));
-
-      const q = query(
-        bookingsRef,
-        where("date", ">=", Timestamp.fromDate(startOfDay)),
-        where("date", "<=", Timestamp.fromDate(endOfDay)),
-        orderBy("date", "asc")
-      );
+      // Simplificar query - obtener todas las reservas y filtrar por fecha localmente
+      const q = query(bookingsRef, orderBy("createdAt", "desc"));
 
       const snapshot = await getDocs(q);
-      const bookingsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const bookingsData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Convertir fecha string a Date para comparación
+          dateObj: new Date(data.date)
+        };
+      });
 
-      setBookings(bookingsData);
+      // Filtrar por fecha seleccionada
+      const selectedDateObj = new Date(selectedDate);
+      const filteredByDate = bookingsData.filter(booking => {
+        const bookingDate = booking.dateObj;
+        return bookingDate.toDateString() === selectedDateObj.toDateString();
+      });
+
+      setBookings(filteredByDate);
     } catch (error) {
       console.error("Error al cargar citas:", error);
+      // Fallback: intentar sin orderBy si falla
+      try {
+        const fallbackSnapshot = await getDocs(collection(db, "bookings"));
+        const fallbackData = fallbackSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          dateObj: new Date(doc.data().date)
+        }));
+        
+        const selectedDateObj = new Date(selectedDate);
+        const filteredByDate = fallbackData.filter(booking => {
+          const bookingDate = booking.dateObj;
+          return bookingDate.toDateString() === selectedDateObj.toDateString();
+        });
+        
+        setBookings(filteredByDate);
+      } catch (fallbackError) {
+        console.error("Error en fallback:", fallbackError);
+        setBookings([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -69,7 +95,7 @@ const BookingsView = ({ userRole }) => {
 
   const updateBookingStatus = async (bookingId, newStatus) => {
     try {
-      const bookingRef = doc(db, "reservations", bookingId);
+      const bookingRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingRef, {
         status: newStatus,
         updatedAt: Timestamp.now()
@@ -110,19 +136,28 @@ const BookingsView = ({ userRole }) => {
     );
   };
 
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleTimeString("es-DO", { 
-      hour: "2-digit", 
-      minute: "2-digit" 
-    });
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    return timeString; // Ya viene en formato "HH:MM"
+  };
+
+  const handleViewBooking = (booking) => {
+    setSelectedBooking(booking);
+    setIsDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedBooking(null);
   };
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = 
-      booking.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.serviceName?.toLowerCase().includes(searchTerm.toLowerCase());
+      booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.services?.some(service => 
+        service.serviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.subserviceName?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     
     const matchesFilter = 
       filterStatus === "all" || booking.status === filterStatus;
@@ -211,15 +246,22 @@ const BookingsView = ({ userRole }) => {
               <div className="booking-card__header">
                 <div className="booking-card__time">
                   <Clock size={16} />
-                  {formatTime(booking.date)}
+                  {formatTime(booking.time)}
                 </div>
                 {getStatusBadge(booking.status)}
               </div>
 
               <div className="booking-card__content">
-                <h3 className="booking-card__client">{booking.clientName}</h3>
-                <p className="booking-card__service">
-                  {booking.serviceName} • {booking.duration} min
+                <h3 className="booking-card__client">{booking.customerName}</h3>
+                <div className="booking-card__services">
+                  {booking.services?.map((service, index) => (
+                    <p key={index} className="booking-card__service">
+                      {service.serviceName} - {service.subserviceName} • ${service.price}
+                    </p>
+                  ))}
+                </div>
+                <p className="booking-card__total">
+                  Total: ${booking.totalPrice} • {booking.totalDuration} min
                 </p>
                 {booking.notes && (
                   <p className="booking-card__notes">
@@ -229,7 +271,10 @@ const BookingsView = ({ userRole }) => {
               </div>
 
               <div className="booking-card__actions">
-                <button className="btn-action btn-action--view">
+                <button 
+                  className="btn-action btn-action--view"
+                  onClick={() => handleViewBooking(booking)}
+                >
                   <Eye size={16} />
                   Ver
                 </button>
@@ -265,6 +310,13 @@ const BookingsView = ({ userRole }) => {
           ))}
         </div>
       )}
+
+      {/* Modal de detalles */}
+      <BookingDetailModal
+        booking={selectedBooking}
+        isOpen={isDetailModalOpen}
+        onClose={closeDetailModal}
+      />
     </div>
   );
 };
