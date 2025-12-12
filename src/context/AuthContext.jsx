@@ -42,9 +42,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Función para crear perfil de usuario completo
+  // Función para crear perfil de usuario completo (DEPRECATED - ahora se maneja en Cloud Function)
+  // Esta función se mantiene solo para casos de emergencia o migración
   const createUserProfile = async (uid, userData) => {
     try {
+      console.warn('createUserProfile called - this should be handled by Cloud Function');
       const defaultProfile = {
         email: userData.email,
         displayName: userData.displayName || userData.email.split('@')[0],
@@ -124,11 +126,13 @@ export const AuthProvider = ({ children }) => {
       
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // Cargar perfil completo después del login
+      // El perfil se crea automáticamente por la Cloud Function
+      // Solo verificamos que existe, pero no lo creamos manualmente
       const profile = await getUserProfile(userCredential.user.uid);
       
       if (!profile) {
-        // Si no existe perfil, crear uno con rol customer por defecto
+        console.warn('User profile not found - Cloud Function may have failed');
+        // En caso de emergencia, crear perfil básico
         await createUserProfile(userCredential.user.uid, {
           email: userCredential.user.email,
           displayName: userCredential.user.displayName
@@ -157,18 +161,21 @@ export const AuthProvider = ({ children }) => {
       
       const userCredential = await signInWithPopup(auth, provider);
       
-      // Verificar si el usuario ya tiene perfil
-      const profile = await getUserProfile(userCredential.user.uid);
-      
-      if (!profile) {
-        // Crear perfil para nuevo usuario de Google
-        await createUserProfile(userCredential.user.uid, {
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName,
-          photoURL: userCredential.user.photoURL,
-          provider: 'google'
-        });
-      }
+      // El perfil se crea automáticamente por la Cloud Function
+      // Solo verificamos que existe después de un breve delay
+      setTimeout(async () => {
+        const profile = await getUserProfile(userCredential.user.uid);
+        if (!profile) {
+          console.warn('Google user profile not found - Cloud Function may have failed');
+          // En caso de emergencia, crear perfil básico
+          await createUserProfile(userCredential.user.uid, {
+            email: userCredential.user.email,
+            displayName: userCredential.user.displayName,
+            photoURL: userCredential.user.photoURL,
+            provider: 'google'
+          });
+        }
+      }, 1000); // Dar tiempo a la Cloud Function
       
       return userCredential;
     } catch (err) {
@@ -194,11 +201,9 @@ export const AuthProvider = ({ children }) => {
         });
       }
       
-      // Crear perfil completo en Firestore
-      await createUserProfile(userCredential.user.uid, {
-        email,
-        ...additionalData
-      });
+      // El perfil se crea automáticamente por la Cloud Function onCreate
+      // Ya no necesitamos crear el perfil manualmente aquí
+      console.log('User created - profile will be created by Cloud Function');
       
       return userCredential;
     } catch (err) {
@@ -242,12 +247,21 @@ export const AuthProvider = ({ children }) => {
           // Si hay usuario logueado, buscamos su perfil completo en Firestore
           let profile = await getUserProfile(currentUser.uid);
           
-          // Si no existe perfil, crear uno con rol customer por defecto
+          // Si no existe perfil, esperar un poco por la Cloud Function
           if (!profile) {
-            profile = await createUserProfile(currentUser.uid, {
-              email: currentUser.email,
-              displayName: currentUser.displayName || currentUser.email.split('@')[0]
-            });
+            console.log('Profile not found, waiting for Cloud Function...');
+            // Esperar 2 segundos y volver a intentar
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            profile = await getUserProfile(currentUser.uid);
+            
+            // Si aún no existe, crear uno como fallback
+            if (!profile) {
+              console.warn('Cloud Function failed - creating profile as fallback');
+              profile = await createUserProfile(currentUser.uid, {
+                email: currentUser.email,
+                displayName: currentUser.displayName || currentUser.email.split('@')[0]
+              });
+            }
           }
           
           // Combinamos el objeto de Auth con los datos completos de Firestore

@@ -2,9 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Funciones de verificación de roles basadas en documento de usuario
+    // Funciones de verificación de roles basadas en Custom Claims (OPTIMIZADO)
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return request.auth.token.role;
+    }
+    
+    function getUserPermissions() {
+      return request.auth.token.permissions;
     }
     
     function isAdmin() {
@@ -35,6 +39,12 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
     
+    function hasPermission(permission) {
+      return request.auth != null && 
+             request.auth.token.permissions != null && 
+             request.auth.token.permissions[permission] == true;
+    }
+    
     // PRODUCTOS - Gestión completa para admin/manager
     match /products/{productId} {
       allow read: if true; // Lectura pública para clientes
@@ -59,11 +69,11 @@ service cloud.firestore {
       allow delete: if isAdmin(); // Solo Admin puede eliminar usuarios
     }
     
-    // RESERVAS/BOOKINGS - Gestión operativa
+    // RESERVAS/BOOKINGS - Gestión operativa (SECURIZADA)
     match /bookings/{bookingId} {
       allow read: if isStaffOrAbove(); // Todo el staff puede ver reservas
-      allow create: if true; // Clientes públicos pueden crear reservas
-      allow update: if isStaffOrAbove(); // Todo el staff puede actualizar estado de reservas
+      allow create: if false; // Bloqueado - usar Cloud Function createBooking
+      allow update: if false; // Bloqueado - usar Cloud Function updateBooking
       allow delete: if isManagerOrAbove(); // Solo Manager+ puede eliminar reservas
     }
     

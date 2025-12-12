@@ -175,27 +175,32 @@ const App = () => {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/booking" element={<Booking />} />
             
-            {/* Diagnóstico del Sistema (TEMPORAL) */}
-            <Route 
-              path="/diagnostic" 
-              element={
-                <div className="container mx-auto py-8">
-                  <SystemDiagnostic />
-                </div>
-              } 
-            />
-            
-            {/* Subir Servicios (TEMPORAL) */}
-            <Route 
-              path="/upload-services" 
-              element={<UploadServices />} 
-            />
-            
-            {/* Probar Notificaciones (TEMPORAL) */}
-            <Route 
-              path="/test-notifications" 
-              element={<TestNotifications />} 
-            />
+            {/* Rutas de desarrollo - Solo disponibles en modo desarrollo */}
+            {import.meta.env.DEV && (
+              <>
+                {/* Diagnóstico del Sistema (TEMPORAL) */}
+                <Route 
+                  path="/diagnostic" 
+                  element={
+                    <div className="container mx-auto py-8">
+                      <SystemDiagnostic />
+                    </div>
+                  } 
+                />
+                
+                {/* Subir Servicios (TEMPORAL) */}
+                <Route 
+                  path="/upload-services" 
+                  element={<UploadServices />} 
+                />
+                
+                {/* Probar Notificaciones (TEMPORAL) */}
+                <Route 
+                  path="/test-notifications" 
+                  element={<TestNotifications />} 
+                />
+              </>
+            )}
           </Route>
 
           </Routes>
