@@ -18,8 +18,8 @@ import trenzasFoto from "../assets/images/TRECCINE-AFRICANE-630x630.jpeg";
 import uñasFoto from "../assets/images/uñas.jpg";
 import peluqueriaFoto from "../assets/images/peluqueria.jpg";
 import spaFoto from "../assets/images/spa.avif";
-import CejasFoto from "../assets/images/cejas.png";
-import PosturaFoto from "../assets/images/postura.png";
+import CejasFoto from "../assets/images/Cejas.png";
+import PosturaFoto from "../assets/images/Postura.png";
 
 // --- Datos de Servicios Destacados (ICONOS ELIMINADOS) ---
 const serviceHighlights = [
