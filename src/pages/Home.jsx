@@ -22,31 +22,31 @@ const serviceHighlights = [
   {
     title: "Trenzas Africanas",
     description: "Comodidad y estilo en cada hebra.",
-    imgSrc: trenzasFoto,
+    imgSrc: null,
     href: "/services",
   },
   {
     title: "Uñas Acrílicas",
     description: "Manicure, pedicure y diseños exclusivos.",
-    imgSrc: uñasFoto,
+    imgSrc: null,
     href: "/services",
   },
   {
     title: "Extenciones y Pelucas",
     description: "Transforma tu look al instante.",
-    imgSrc: PosturaFoto,
+    imgSrc: null,
     href: "/services",
   },
   {
     title: "Cejas y Pestañas",
     description: "Resalta tu mirada con estilo.",
-    imgSrc: CejasFoto,
+    imgSrc: null,
     href: "/services",
   },
   {
     title: "Spa",
     description: "Relajación y cuidado integral.",
-    imgSrc: spaFoto,
+    imgSrc: null,
     href: "/services",
   },
 ];
