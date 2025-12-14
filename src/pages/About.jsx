@@ -1,6 +1,9 @@
 // src/pages/About.jsx
 import React from "react";
 import "../styles/About.css";
+import EstilistaFoto from "../assets/images/Estilista.png";
+import ColoristaFoto from "../assets/images/Colorista.png";
+import Manicurista from "../assets/images/Manicurista.png";
 
 /* ===== Card reutilizable (solo para Nosotros) ===== */
 const TeamCard = ({ photo, name, role, quote }) => {
@@ -29,19 +32,19 @@ const teamMembers = [
     name: "María Pérez",
     role: "Estilista Profesional",
     quote: "La belleza comienza cuando te sientes tú misma.",
-    photo: null,
+    photo: EstilistaFoto,
   },
   {
     name: "Ana Rodríguez",
     role: "Especialista en Uñas",
     quote: "Cada detalle cuenta cuando se trata de estilo.",
-    photo: null,
+    photo: Manicurista,
   },
   {
     name: "Laura Gómez",
     role: "Colorista",
     quote: "El color correcto puede cambiarlo todo.",
-    photo: null,
+    photo: ColoristaFoto,
   },
 ];
 

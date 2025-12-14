@@ -9,9 +9,14 @@
 
 /* Hero Nosotros */
 .about-hero {
-  padding: 6rem 1.5rem 4rem;
+  padding: 7rem 1.5rem 4.5rem;
   text-align: center;
-  background: linear-gradient(180deg, #fff0f3 0%, #ffe4e6 100%);
+  background: linear-gradient(
+    180deg,
+    #fff0f3 0%,
+    #ffe4e6 45%,
+    #ffffff 100%
+  );
 }
 
 .about-hero__title {
@@ -158,6 +163,9 @@
   line-height: 1.6;
 }
 
+
+
+
 /* =========================================
    RESPONSIVE
    ========================================= */
@@ -177,17 +185,17 @@
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .about-hero {
-    background: var(--color-bg-dark);
-  }
+  
 
   .about-hero__title {
-    color: var(--color-white);
+    color: var(--color-primary);
   }
 
   .about-hero__subtitle {
-    background-color: rgba(255, 255, 255, 0.15);
-    color: var(--color-white);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-gray);
+    border: 1px solid rgba(244, 63, 94, 0.25);
   }
 }
+
+

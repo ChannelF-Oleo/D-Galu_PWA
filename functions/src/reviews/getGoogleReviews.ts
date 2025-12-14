@@ -1,14 +1,12 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
-import axios from "axios";
+import axios from "axios"; // ✅ Usamos Axios
 import { db } from "../utils/admin";
 
-// 🔐 Secret
 const GOOGLE_PLACES_API_KEY = defineSecret("GOOGLE_PLACES_API_KEY");
 
-// ⚙️ CONFIG
-const PLACE_ID = "TU_PLACE_ID_AQUI"; // Recuerda poner tu ID real
-const FIRESTORE_DOC_PATH = "content/google_reviews";
+// Tu ID real (Confirmado)
+const PLACE_ID = "ChIJLU7jZClu5kcR4PcAY3894Vg";
 
 export const getGoogleReviews = onRequest(
   {
@@ -20,48 +18,54 @@ export const getGoogleReviews = onRequest(
   },
   async (req, res) => {
     try {
-      if (req.method !== "GET") {
-        res.status(405).json({ error: "Method not allowed" });
-        return;
-      }
-
       const apiKey = GOOGLE_PLACES_API_KEY.value();
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${PLACE_ID}&fields=reviews&key=${apiKey}`;
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${PLACE_ID}&fields=reviews&key=${apiKey}&language=es`;
 
+      // ✅ Petición con Axios
       const response = await axios.get(url);
       const data = response.data;
 
-      if (!data.result || !data.result.reviews) {
-        res.status(404).json({ error: "No reviews found" });
+      // 🛑 MODO DETECTIVE: Ver qué responde Google exactamente
+      console.log("🔍 Respuesta de Google:", JSON.stringify(data, null, 2));
+
+      // Si Google responde con un estado que no es OK (ej. REQUEST_DENIED)
+      if (data.status !== "OK") {
+        res.status(200).json({
+          status: "ERROR_GOOGLE",
+          google_says: data.status,
+          error_message: data.error_message || "Sin mensaje detallado",
+          full_response: data,
+        });
         return;
       }
 
-      const reviews = data.result.reviews.map((review: any) => ({
-        authorName: review.author_name,
-        profilePhotoUrl: review.profile_photo_url || null,
-        rating: review.rating,
-        text: review.text || "",
-        relativeTime: review.relative_time_description,
-        time: review.time,
-      }));
+      // Si Google dice OK pero no hay reseñas
+      if (!data.result || !data.result.reviews) {
+        res.status(200).json({
+          status: "ZERO_REVIEWS",
+          message:
+            "El ID es válido y la API funciona, pero no hay reseñas públicas.",
+          place_id_used: PLACE_ID,
+        });
+        return;
+      }
+
+      const reviews = data.result.reviews;
 
       // Guardar en Firestore
-      await db.doc(FIRESTORE_DOC_PATH).set(
-        {
-          reviews,
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
+      await db
+        .doc("content/google_reviews")
+        .set({ reviews, updatedAt: new Date() }, { merge: true });
 
-      res.status(200).json({
-        success: true,
-        count: reviews.length,
-        data: reviews,
-      });
-    } catch (error) {
-      console.error("❌ Error fetching Google reviews:", error);
-      res.status(500).json({ error: "Internal server error" });
+      // Respuesta exitosa
+      res
+        .status(200)
+        .json({ success: true, count: reviews.length, data: reviews });
+    } catch (error: any) {
+      console.error("❌ Error:", error);
+      // Axios encapsula el error de red o respuesta
+      const errorData = error.response ? error.response.data : error.message;
+      res.status(500).json({ error: "Fallo interno", details: errorData });
     }
   }
 );
