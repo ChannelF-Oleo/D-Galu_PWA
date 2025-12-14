@@ -1,9 +1,9 @@
 // src/pages/About.jsx
 import React from "react";
 import "../styles/About.css";
-import EstilistaFoto from "../assets/images/Estilista.png";
-import ColoristaFoto from "../assets/images/Colorista.png";
-import Manicurista from "../assets/images/Manicurista.png";
+import EstilistaFoto from "../assets/images/Estilista.jpg";
+import ColoristaFoto from "../assets/images/Colorista.jpg";
+import Manicurista from "../assets/images/Manicurista.jpg";
 
 /* ===== Card reutilizable (solo para Nosotros) ===== */
 const TeamCard = ({ photo, name, role, quote }) => {

@@ -2,8 +2,7 @@
 import { useEffect, useState } from "react";
 import "./ReviewsSection.css";
 
-const ENDPOINT =
-  import.meta.env.VITE_GOOGLE_REVIEWS_ENDPOINT;
+const ENDPOINT =await fetch("https://getgooglereviews-7fa64vatrq-uc.a.run.app")
 
 const ReviewsSection = () => {
   const [reviews, setReviews] = useState([]);
