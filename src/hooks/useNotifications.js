@@ -6,9 +6,9 @@ import {
   addDoc, 
   query, 
   where, 
-  orderBy, 
   onSnapshot, 
   updateDoc, 
+  deleteDoc, // <--- IMPORTANTE: Agregar esto
   doc,
   serverTimestamp 
 } from 'firebase/firestore';
@@ -30,7 +30,6 @@ export const useNotifications = () => {
       return;
     }
 
-    // Solo administradores, managers y staff reciben notificaciones
     if (!['admin', 'manager', 'staff'].includes(user.role)) {
       setLoading(false);
       return;
@@ -38,7 +37,6 @@ export const useNotifications = () => {
 
     const notificationsRef = collection(db, 'notifications');
     
-    // Simplificar query para evitar problemas de índices
     const q = query(
       notificationsRef,
       where('targetRoles', 'array-contains', user.role)
@@ -60,7 +58,6 @@ export const useNotifications = () => {
         }
       });
 
-      // Ordenar por fecha localmente
       notificationsData.sort((a, b) => {
         const dateA = a.createdAt?.toDate?.() || new Date(0);
         const dateB = b.createdAt?.toDate?.() || new Date(0);
@@ -80,7 +77,6 @@ export const useNotifications = () => {
     return () => unsubscribe();
   }, [user]);
 
-  // Crear nueva notificación
   const createNotification = async (notificationData) => {
     try {
       const notification = {
@@ -92,13 +88,11 @@ export const useNotifications = () => {
       };
 
       await addDoc(collection(db, 'notifications'), notification);
-      console.log('Notification created successfully');
     } catch (error) {
       console.error('Error creating notification:', error);
     }
   };
 
-  // Marcar notificación como leída
   const markAsRead = async (notificationId) => {
     if (!user) return;
 
@@ -118,7 +112,6 @@ export const useNotifications = () => {
     }
   };
 
-  // Marcar todas como leídas
   const markAllAsRead = async () => {
     if (!user) return;
 
@@ -142,13 +135,23 @@ export const useNotifications = () => {
     }
   };
 
+  // --- NUEVA FUNCIÓN ---
+  const deleteNotification = async (notificationId) => {
+    try {
+      await deleteDoc(doc(db, 'notifications', notificationId));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
   return {
     notifications,
     unreadCount,
     loading,
     createNotification,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    deleteNotification // <--- Exportar la función
   };
 };
 

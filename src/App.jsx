@@ -1,6 +1,5 @@
 // src/App.jsx
 
-
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
 // Contexto
@@ -24,7 +23,8 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 // Páginas de Administración
 import AdminDashboard from "./pages/AdminDashboard";
 
-// Próximas páginas (Tus imports originales)
+
+// Próximas páginas
 import ServicesList from "./pages/Services/ServicesList";
 import ServiceDetail from "./pages/Services/ServiceDetail";
 
@@ -38,15 +38,8 @@ import About from "./pages/About";
 import Gallery from "./pages/Gallery";
 import Booking from "./pages/Booking";
 
-// Componentes de desarrollo (solo en modo desarrollo)
-import SystemDiagnostic from "./components/debug/SystemDiagnostic";
-import UploadServices from "./pages/UploadServices";
-import TestNotifications from "./pages/TestNotifications";
-import SmokeTest from "./tests/SmokeTest";
-
 // Componentes del carrito
 import ShoppingCart from "./components/cart/ShoppingCart";
-
 
 // Layout para la parte pública (Con Navbar y Footer)
 const PublicLayout = () => {
@@ -68,144 +61,122 @@ const App = () => {
       <AuthProvider>
         <CartProvider>
           <BrowserRouter>
-          {/* Shopping Cart - Available globally */}
-          <ShoppingCart />
-          <Routes>
-          
-          {/* GRUPO 1: RUTAS DEL ADMINISTRADOR (Sin Navbar/Footer) */}
-          <Route
-            path="/AdminDashboard"
-            element={
-              <ProtectedRoute 
-                allowedRoles={['admin', 'manager', 'staff']}
-                requiredPermission="dashboard"
-              >
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+            {/* Shopping Cart - Available globally */}
+            <ShoppingCart />
+            <Routes>
+              {/* GRUPO 1: RUTAS DEL ADMINISTRADOR (Sin Navbar/Footer) */}
+              <Route
+                path="/AdminDashboard"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin", "manager", "staff"]}
+                    requiredPermission="dashboard"
+                  >
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* Rutas administrativas específicas con permisos granulares */}
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute 
-                allowedRoles={['admin']}
-                requiredPermission="canManageUsers"
-              >
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+              {/* Rutas administrativas específicas con permisos granulares */}
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin"]}
+                    requiredPermission="canManageUsers"
+                  >
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/admin/services"
-            element={
-              <ProtectedRoute 
-                allowedRoles={['admin', 'manager']}
-                requiredPermission="canEditServices"
-              >
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/admin/services"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin", "manager"]}
+                    requiredPermission="canEditServices"
+                  >
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/admin/products"
-            element={
-              <ProtectedRoute 
-                allowedRoles={['admin', 'manager']}
-                requiredPermission="canManageProducts"
-              >
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/admin/products"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin", "manager"]}
+                    requiredPermission="canManageProducts"
+                  >
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/admin/bookings"
-            element={
-              <ProtectedRoute 
-                allowedRoles={['admin', 'manager', 'staff']}
-                requiredPermission="canManageBookings"
-              >
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/admin/bookings"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin", "manager", "staff"]}
+                    requiredPermission="canManageBookings"
+                  >
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          <Route
-            path="/admin/academy"
-            element={
-              <ProtectedRoute 
-                allowedRoles={['admin']}
-                requiredPermission="canManageCourses"
-              >
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+              <Route
+                path="/admin/academy"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin"]}
+                    requiredPermission="canManageCourses"
+                  >
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* GRUPO 2: RUTAS PÚBLICAS (Con Navbar/Footer) */}
-          {/* Todas las rutas dentro de este Route usarán PublicLayout */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+              {/* NUEVA RUTA: Pedidos */}
+              <Route
+                path="/admin/orders"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin", "manager", "staff"]}
+                    requiredPermission="canManageBookings"
+                  >
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Servicios */}
-            <Route path="/services" element={<ServicesList />} />
-            <Route path="/services/:id" element={<ServiceDetail />} />
+              {/* GRUPO 2: RUTAS PÚBLICAS (Con Navbar/Footer) */}
+              {/* Todas las rutas dentro de este Route usarán PublicLayout */}
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            {/* Productos */}
-            <Route path="/products" element={<ProductsList />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
+                {/* Servicios */}
+                <Route path="/services" element={<ServicesList />} />
+                <Route path="/services/:id" element={<ServiceDetail />} />
 
-            {/* Academy */}
-            <Route path="/academy" element={<CoursesList />} />
-            <Route path="/academy/:id" element={<CourseDetail />} />
+                {/* Productos */}
+                <Route path="/products" element={<ProductsList />} />
+                <Route path="/products/:id" element={<ProductDetail />} />
 
-            {/* Otras Páginas */}
-            <Route path="/about" element={<About />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/booking" element={<Booking />} />
-            
-            {/* Rutas de desarrollo - Solo disponibles en modo desarrollo */}
-            {import.meta.env.DEV && (
-              <>
-                {/* Diagnóstico del Sistema (TEMPORAL) */}
-                <Route 
-                  path="/diagnostic" 
-                  element={
-                    <div className="container mx-auto py-8">
-                      <SystemDiagnostic />
-                    </div>
-                  } 
-                />
-                
-                {/* Subir Servicios (TEMPORAL) */}
-                <Route 
-                  path="/upload-services" 
-                  element={<UploadServices />} 
-                />
-                
-                {/* Probar Notificaciones (TEMPORAL) */}
-                <Route 
-                  path="/test-notifications" 
-                  element={<TestNotifications />} 
-                />
-                
-                {/* Smoke Test para React 19 */}
-                <Route 
-                  path="/smoke-test" 
-                  element={<SmokeTest />} 
-                />
-              </>
-            )}
-          </Route>
+                {/* Academy */}
+                <Route path="/academy" element={<CoursesList />} />
+                <Route path="/academy/:id" element={<CourseDetail />} />
 
-          </Routes>  
+                {/* Otras Páginas */}
+                <Route path="/about" element={<About />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/booking" element={<Booking />} />
+              </Route>
+            </Routes>
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>

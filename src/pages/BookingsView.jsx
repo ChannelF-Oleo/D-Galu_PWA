@@ -1,23 +1,23 @@
+// src/pages/BookingsView.jsx
 import { useState, useEffect } from "react";
-import { 
-  Calendar as CalendarIcon, 
-  Plus, 
+import {
+  Calendar as CalendarIcon,
+  Plus,
   Eye,
   CheckCircle,
   XCircle,
   Clock,
   Search,
-  Filter
+  Filter,
 } from "lucide-react";
-import { 
-  collection, 
-  query, 
-  where, 
+import {
+  collection,
+  query,
   getDocs,
   updateDoc,
   doc,
   orderBy,
-  Timestamp 
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { hasPermission } from "../utils/rolePermissions";
@@ -29,7 +29,13 @@ const BookingsView = ({ userRole }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Inicializar fecha usando formato local YYYY-MM-DD seguro
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    return now.toLocaleDateString("en-CA"); // Formato YYYY-MM-DD
+  });
+
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -43,51 +49,47 @@ const BookingsView = ({ userRole }) => {
     setLoading(true);
     try {
       const bookingsRef = collection(db, "bookings");
-      
-      // Simplificar query - obtener todas las reservas y filtrar por fecha localmente
+
+      // Traemos ordenado por creación para tener consistencia
       const q = query(bookingsRef, orderBy("createdAt", "desc"));
-
       const snapshot = await getDocs(q);
-      const bookingsData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          // Convertir fecha string a Date para comparación
-          dateObj: new Date(data.date)
-        };
-      });
 
-      // Filtrar por fecha seleccionada
-      const selectedDateObj = new Date(selectedDate);
-      const filteredByDate = bookingsData.filter(booking => {
-        const bookingDate = booking.dateObj;
-        return bookingDate.toDateString() === selectedDateObj.toDateString();
+      const bookingsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // LÓGICA CORREGIDA DE FILTRADO
+      const filteredByDate = bookingsData.filter((booking) => {
+        if (!booking.date) return false;
+
+        let bookingDateObj;
+
+        // 1. Normalizar la fecha de la cita (Soporte para Timestamp y String)
+        if (booking.date.toDate) {
+          // Es un Timestamp de Firestore
+          bookingDateObj = booking.date.toDate();
+        } else {
+          // Es un String o Date estándar
+          // Agregamos "T00:00" si es string simple para evitar conversión a UTC anterior
+          const dateStr =
+            typeof booking.date === "string" && booking.date.length === 10
+              ? booking.date + "T12:00:00" // Forzar mediodía para evitar cambios de día por zona horaria
+              : booking.date;
+          bookingDateObj = new Date(dateStr);
+        }
+
+        // 2. Convertir a string YYYY-MM-DD local
+        const bookingDateStr = bookingDateObj.toLocaleDateString("en-CA");
+
+        // 3. Comparación directa de strings (mucho más segura)
+        return bookingDateStr === selectedDate;
       });
 
       setBookings(filteredByDate);
     } catch (error) {
       console.error("Error al cargar citas:", error);
-      // Fallback: intentar sin orderBy si falla
-      try {
-        const fallbackSnapshot = await getDocs(collection(db, "bookings"));
-        const fallbackData = fallbackSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          dateObj: new Date(doc.data().date)
-        }));
-        
-        const selectedDateObj = new Date(selectedDate);
-        const filteredByDate = fallbackData.filter(booking => {
-          const bookingDate = booking.dateObj;
-          return bookingDate.toDateString() === selectedDateObj.toDateString();
-        });
-        
-        setBookings(filteredByDate);
-      } catch (fallbackError) {
-        console.error("Error en fallback:", fallbackError);
-        setBookings([]);
-      }
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -98,19 +100,15 @@ const BookingsView = ({ userRole }) => {
       const bookingRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingRef, {
         status: newStatus,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       });
 
-      // Actualizar localmente
-      setBookings(prev => 
-        prev.map(booking => 
-          booking.id === bookingId 
-            ? { ...booking, status: newStatus }
-            : booking
+      // Actualizar localmente sin recargar
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId ? { ...booking, status: newStatus } : booking
         )
       );
-
-      alert(`Cita ${newStatus === "confirmed" ? "confirmada" : "cancelada"}`);
     } catch (error) {
       console.error("Error al actualizar cita:", error);
       alert("Error al actualizar la cita");
@@ -120,14 +118,26 @@ const BookingsView = ({ userRole }) => {
   const getStatusBadge = (status) => {
     const badges = {
       pending: { label: "Pendiente", class: "status--pending", icon: Clock },
-      confirmed: { label: "Confirmada", class: "status--confirmed", icon: CheckCircle },
-      cancelled: { label: "Cancelada", class: "status--cancelled", icon: XCircle },
-      completed: { label: "Completada", class: "status--completed", icon: CheckCircle }
+      confirmed: {
+        label: "Confirmada",
+        class: "status--confirmed",
+        icon: CheckCircle,
+      },
+      cancelled: {
+        label: "Cancelada",
+        class: "status--cancelled",
+        icon: XCircle,
+      },
+      completed: {
+        label: "Completada",
+        class: "status--completed",
+        icon: CheckCircle,
+      },
     };
-    
+
     const badge = badges[status] || badges.pending;
     const Icon = badge.icon;
-    
+
     return (
       <span className={`status-badge ${badge.class}`}>
         <Icon size={14} />
@@ -138,7 +148,7 @@ const BookingsView = ({ userRole }) => {
 
   const formatTime = (timeString) => {
     if (!timeString) return "";
-    return timeString; // Ya viene en formato "HH:MM"
+    return timeString;
   };
 
   const handleViewBooking = (booking) => {
@@ -151,15 +161,20 @@ const BookingsView = ({ userRole }) => {
     setSelectedBooking(null);
   };
 
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = 
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch =
       booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.services?.some(service => 
-        service.serviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.subserviceName?.toLowerCase().includes(searchTerm.toLowerCase())
+      booking.services?.some(
+        (service) =>
+          service.serviceName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          service.subserviceName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase())
       );
-    
-    const matchesFilter = 
+
+    const matchesFilter =
       filterStatus === "all" || booking.status === filterStatus;
 
     return matchesSearch && matchesFilter;
@@ -236,7 +251,7 @@ const BookingsView = ({ userRole }) => {
           <p>
             {searchTerm || filterStatus !== "all"
               ? "No se encontraron citas con ese criterio"
-              : "No hay citas programadas para esta fecha"}
+              : `No hay citas programadas para el ${selectedDate}`}
           </p>
         </div>
       ) : (
@@ -247,8 +262,10 @@ const BookingsView = ({ userRole }) => {
                 <div className="booking-card__time">
                   <Clock size={16} />
                   {formatTime(booking.time)}
-                </div>
+                </div >
+                
                 {getStatusBadge(booking.status)}
+                
               </div>
 
               <div className="booking-card__content">
@@ -256,7 +273,9 @@ const BookingsView = ({ userRole }) => {
                 <div className="booking-card__services">
                   {booking.services?.map((service, index) => (
                     <p key={index} className="booking-card__service">
-                      {service.serviceName} - {service.subserviceName} • ${service.price}
+                      {service.serviceName}
+                      {service.subserviceName && ` - ${service.subserviceName}`}
+                      {service.price && ` • $${service.price}`}
                     </p>
                   ))}
                 </div>
@@ -264,14 +283,12 @@ const BookingsView = ({ userRole }) => {
                   Total: ${booking.totalPrice} • {booking.totalDuration} min
                 </p>
                 {booking.notes && (
-                  <p className="booking-card__notes">
-                    📝 {booking.notes}
-                  </p>
+                  <p className="booking-card__notes">📝 {booking.notes}</p>
                 )}
               </div>
 
               <div className="booking-card__actions">
-                <button 
+                <button
                   className="btn-action btn-action--view"
                   onClick={() => handleViewBooking(booking)}
                 >
@@ -282,14 +299,18 @@ const BookingsView = ({ userRole }) => {
                   <>
                     <button
                       className="btn-action btn-action--confirm"
-                      onClick={() => updateBookingStatus(booking.id, "confirmed")}
+                      onClick={() =>
+                        updateBookingStatus(booking.id, "confirmed")
+                      }
                     >
                       <CheckCircle size={16} />
                       Confirmar
                     </button>
                     <button
                       className="btn-action btn-action--cancel"
-                      onClick={() => updateBookingStatus(booking.id, "cancelled")}
+                      onClick={() =>
+                        updateBookingStatus(booking.id, "cancelled")
+                      }
                     >
                       <XCircle size={16} />
                       Cancelar

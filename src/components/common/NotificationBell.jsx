@@ -1,52 +1,59 @@
 // src/components/common/NotificationBell.jsx
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Bell, X, Check, CheckCheck } from 'lucide-react';
-import { useNotifications } from '../../hooks/useNotifications';
-import { useAuth } from '../../context/AuthContext';
-import '../layout/TopBar.css'; // Importar estilos del TopBar
+import React, { useState, useRef, useEffect } from "react";
+import { Bell, X, CheckCheck } from "lucide-react"; // Eliminé 'Check' que no se usaba
+import { useNotifications } from "../../hooks/useNotifications";
+import { useAuth } from "../../context/AuthContext";
+import "../layout/TopBar.css";
 
 const NotificationBell = () => {
   const { user } = useAuth();
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, loading, markAllAsRead, markAsRead } =
+    useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Solo mostrar para roles administrativos
-  if (!user || !['admin', 'manager', 'staff'].includes(user.role)) {
-    return null;
-  }
-
+  // 1. MOVER EL USEEFFECT AQUÍ (ANTES DEL RETURN)
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Si el componente no se renderizó (ref null), no pasa nada
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // 2. AHORA SÍ PUEDES HACER EL RETURN CONDICIONAL
+  // Solo mostrar para roles administrativos
+  if (!user || !["admin", "manager", "staff"].includes(user.role)) {
+    return null;
+  }
+
+  // --- Funciones auxiliares ---
   const handleNotificationClick = async (notification) => {
     await markAsRead(notification.id);
-    
+
     // Navegar según el tipo de notificación
-    if (notification.type === 'new_booking' && notification.bookingId) {
-      // Aquí podrías navegar al detalle de la reserva
-      console.log('Navigate to booking:', notification.bookingId);
+    if (notification.type === "new_booking" && notification.bookingId) {
+      console.log("Navigate to booking:", notification.bookingId);
     }
   };
 
   const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-    
+    if (!timestamp) return "";
+
+    // Soporte tanto para Timestamp de Firestore como para Date
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const now = new Date();
-    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Ahora';
+    // Cálculo seguro evitando divisiones por cero o negativos extraños
+    const diffInMs = now - date;
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+    if (diffInMinutes < 1) return "Ahora";
     if (diffInMinutes < 60) return `${diffInMinutes}m`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
     return `${Math.floor(diffInMinutes / 1440)}d`;
@@ -54,44 +61,38 @@ const NotificationBell = () => {
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'new_booking':
-        return '📅';
-      case 'booking_cancelled':
-        return '❌';
-      case 'booking_confirmed':
-        return '✅';
-      case 'payment_received':
-        return '💰';
+      case "new_booking":
+        return "📅";
+      case "booking_cancelled":
+        return "❌";
+      case "booking_confirmed":
+        return "✅";
+      case "payment_received":
+        return "💰";
       default:
-        return '📢';
+        return "📢";
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'high':
-        return 'border-l-red-500 bg-red-50';
-      case 'medium':
-        return 'border-l-yellow-500 bg-yellow-50';
+      case "high":
+        return "border-l-red-500 bg-red-50";
+      case "medium":
+        return "border-l-yellow-500 bg-yellow-50";
       default:
-        return 'border-l-blue-500 bg-blue-50';
+        return "border-l-blue-500 bg-blue-50";
     }
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Campana */}
-      <button
-        onClick={() => {
-          console.log('Notification bell clicked, isOpen:', isOpen);
-          setIsOpen(!isOpen);
-        }}
-        className="topbar__action-btn"
-      >
+      <button onClick={() => setIsOpen(!isOpen)} className="topbar__action-btn">
         <Bell size={20} />
         {unreadCount > 0 && (
           <span className="absolute top-1.5 right-1.5 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium text-[10px]">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
@@ -138,21 +139,28 @@ const NotificationBell = () => {
               </div>
             ) : (
               notifications.map((notification) => {
-                const isRead = notification.readBy && notification.readBy.includes(user.uid);
-                
+                const isRead =
+                  notification.readBy && notification.readBy.includes(user.uid);
+
                 return (
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`p-4 border-l-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      getPriorityColor(notification.priority)
-                    } ${!isRead ? 'bg-blue-50' : 'bg-white'}`}
+                    className={`p-4 border-l-4 cursor-pointer hover:bg-gray-50 transition-colors ${getPriorityColor(
+                      notification.priority
+                    )} ${!isRead ? "bg-blue-50" : "bg-white"}`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                      <span className="text-lg">
+                        {getNotificationIcon(notification.type)}
+                      </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h4 className={`text-sm font-medium ${!isRead ? 'text-gray-900' : 'text-gray-700'}`}>
+                          <h4
+                            className={`text-sm font-medium ${
+                              !isRead ? "text-gray-900" : "text-gray-700"
+                            }`}
+                          >
                             {notification.title}
                           </h4>
                           <span className="text-xs text-gray-500">
@@ -165,7 +173,9 @@ const NotificationBell = () => {
                         {!isRead && (
                           <div className="flex items-center gap-1 mt-2">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-xs text-blue-600 font-medium">Nueva</span>
+                            <span className="text-xs text-blue-600 font-medium">
+                              Nueva
+                            </span>
                           </div>
                         )}
                       </div>
@@ -179,12 +189,13 @@ const NotificationBell = () => {
           {/* Footer */}
           {notifications.length > 0 && (
             <div className="p-3 border-t border-gray-200 bg-gray-50">
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsOpen(false);
-                  // Disparar evento personalizado para abrir el inbox
-                  window.dispatchEvent(new CustomEvent('openNotificationsInbox'));
+                  window.dispatchEvent(
+                    new CustomEvent("openNotificationsInbox")
+                  );
                 }}
                 className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium"
               >

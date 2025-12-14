@@ -10,6 +10,7 @@ import {
   GraduationCap,
   Users,
   Image,
+  Package,
 } from "lucide-react";
 
 // Importar componentes
@@ -22,7 +23,8 @@ import ProductsView from "./ProductsView";
 import AcademyView from "./AcademyView";
 import UsersView from "./UsersView";
 import GalleryAdminView from "./GalleryAdminView";
-import NotificationsInbox from "./NotificationsInbox"; 
+import NotificationsInbox from "./NotificationsInbox";
+import OrdersView from "./OrdersView";
 
 // Importar utilidades de roles
 import { getMenuItemsByRole } from "../utils/rolePermissions";
@@ -44,8 +46,6 @@ const AdminDashboard = () => {
   // Por defecto usamos 'admin', ajusta según tu estructura
   const userRole = user?.role || "admin";
 
-
-
   // Iconos para los items del menú
   const menuIcons = {
     dashboard: LayoutDashboard,
@@ -55,6 +55,7 @@ const AdminDashboard = () => {
     gallery: Image,
     academy: GraduationCap,
     users: Users,
+    orders: Package,
   };
 
   // Obtener items del menú según el rol
@@ -86,8 +87,12 @@ const AdminDashboard = () => {
       setShowNotificationsInbox(true);
     };
 
-    window.addEventListener('openNotificationsInbox', handleOpenNotifications);
-    return () => window.removeEventListener('openNotificationsInbox', handleOpenNotifications);
+    window.addEventListener("openNotificationsInbox", handleOpenNotifications);
+    return () =>
+      window.removeEventListener(
+        "openNotificationsInbox",
+        handleOpenNotifications
+      );
   }, []);
 
   // Renderizado del contenido principal según la pestaña activa
@@ -108,11 +113,14 @@ const AdminDashboard = () => {
       case "academy":
         return <AcademyView userRole={userRole} />;
 
-        case "users":
-          return <UsersView userRole={userRole} />;
+      case "users":
+        return <UsersView userRole={userRole} />;
 
-        case "gallery":
-          return <GalleryAdminView userRole={userRole} />;
+      case "gallery":
+        return <GalleryAdminView userRole={userRole} />;
+
+      case "orders":
+        return <OrdersView userRole={userRole} />;
 
       default:
         return (
@@ -146,7 +154,10 @@ const AdminDashboard = () => {
             <TopBar
               user={user}
               activeTab="notifications"
-              menuItems={[...menuItems, { id: 'notifications', label: 'Notificaciones' }]}
+              menuItems={[
+                ...menuItems,
+                { id: "notifications", label: "Notificaciones" },
+              ]}
               isSidebarOpen={isSidebarOpen}
               toggleSidebar={toggleSidebar}
               isSidebarCollapsed={isSidebarCollapsed}
@@ -154,7 +165,9 @@ const AdminDashboard = () => {
             />
 
             <main className="admin-layout__content">
-              <NotificationsInbox onBack={() => setShowNotificationsInbox(false)} />
+              <NotificationsInbox
+                onBack={() => setShowNotificationsInbox(false)}
+              />
             </main>
           </div>
         </div>

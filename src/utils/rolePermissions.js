@@ -3,7 +3,7 @@
  */
 export const ROLES = {
   ADMIN: "admin",
-  MANAGER: "manager", 
+  MANAGER: "manager",
   STAFF: "staff",
   CUSTOMER: "customer",
   STUDENT: "student",
@@ -44,8 +44,8 @@ const MENU_CONFIG = [
     allowedRoles: [ROLES.ADMIN, ROLES.STUDENT],
   },
   {
-    id: "users",
-    label: "Usuarios & Roles",
+    id: "orders",
+    label: "Pedidos",
     allowedRoles: [ROLES.ADMIN],
   },
 ];

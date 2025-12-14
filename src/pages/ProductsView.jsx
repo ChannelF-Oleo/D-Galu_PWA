@@ -21,13 +21,13 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import {
-  ref,
-  deleteObject,
-} from "firebase/storage";
-import { db, storage } from "../config/firebase"; 
+import { ref, deleteObject } from "firebase/storage";
+import { db, storage } from "../config/firebase";
 import { hasPermission } from "../utils/rolePermissions";
 import ImageUploader from "../components/shared/ImageUploader";
+
+// Importamos la hoja de estilos original
+import "./ProductsView.css";
 
 const ProductsView = ({ userRole }) => {
   const [products, setProducts] = useState([]);
@@ -58,19 +58,15 @@ const ProductsView = ({ userRole }) => {
 
   const [formData, setFormData] = useState(initialFormState);
 
-  // Fetch products
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const productsRef = collection(db, "products");
       const q = query(productsRef, orderBy("name", "asc"));
-
       const snapshot = await getDocs(q);
       setProducts(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     } catch (error) {
       console.error("Error fetching products:", error);
-      
-      // Fallback sin orderBy
       try {
         const fallbackSnapshot = await getDocs(collection(db, "products"));
         setProducts(
@@ -87,8 +83,6 @@ const ProductsView = ({ userRole }) => {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
-
-  // Image upload is now handled by ImageUploader component
 
   const closeModal = () => {
     setShowModal(false);
@@ -133,19 +127,18 @@ const ProductsView = ({ userRole }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.name || !formData.price) {
       return alert("Nombre y precio son obligatorios");
     }
 
     setUploading(true);
     try {
-      // Image URL is already set by ImageUploader component
       const imageUrl = formData.image || editingProduct?.images?.[0] || "";
-
-      // Procesar tags
-      const tagsArray = formData.tags 
-        ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+      const tagsArray = formData.tags
+        ? formData.tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag)
         : [];
 
       const productPayload = {
@@ -173,7 +166,6 @@ const ProductsView = ({ userRole }) => {
         });
         alert("¡Producto creado!");
       }
-
       closeModal();
       fetchProducts();
     } catch (error) {
@@ -186,11 +178,8 @@ const ProductsView = ({ userRole }) => {
 
   const handleDelete = async (product) => {
     if (!window.confirm(`¿Eliminar "${product.name}"?`)) return;
-
     try {
       await deleteDoc(doc(db, "products", product.id));
-      
-      // Borrar imágenes si existen
       if (product.images && product.images.length > 0) {
         for (const imageUrl of product.images) {
           try {
@@ -201,7 +190,6 @@ const ProductsView = ({ userRole }) => {
           }
         }
       }
-
       alert("Producto eliminado");
       fetchProducts();
     } catch (error) {
@@ -210,11 +198,11 @@ const ProductsView = ({ userRole }) => {
     }
   };
 
-  // Filter products
-  const filteredProducts = products.filter((product) =>
-    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brand?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = products.filter(
+    (product) =>
+      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.brand?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -227,6 +215,7 @@ const ProductsView = ({ userRole }) => {
       <div className="products-view__controls">
         <div className="search-container">
           <Search size={20} />
+          {/* El CSS original se encarga de estilizar el input dentro de .search-container */}
           <input
             type="text"
             placeholder="Buscar productos..."
@@ -236,8 +225,9 @@ const ProductsView = ({ userRole }) => {
         </div>
 
         {canEdit && (
+          // Usamos la clase .bg-purple-600 definida en tu CSS
           <button
-            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+            className="flex items-center gap-2 bg-purple-600"
             onClick={openCreateModal}
           >
             <Plus size={20} /> Nuevo Producto
@@ -247,12 +237,15 @@ const ProductsView = ({ userRole }) => {
 
       {loading ? (
         <div className="flex justify-center p-12">
-          <div className="spinner"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4"></div>
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <Package size={48} className="mx-auto mb-4 opacity-50" />
-          <p>No se encontraron productos.</p>
+        <div className="text-center py-12">
+          <Package
+            size={48}
+            className="mx-auto mb-4 opacity-50 text-gray-400"
+          />
+          <p className="text-gray-500">No se encontraron productos.</p>
         </div>
       ) : (
         <div className="products-grid">
@@ -270,82 +263,79 @@ const ProductsView = ({ userRole }) => {
                       <Package size={40} />
                     </div>
                   )}
-                  
-                  {/* Badges */}
+
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
+                    {/* Usamos las clases de estado del CSS (.text-red-600, etc.) o badges estilo Tailwind si el CSS lo requiere */}
                     {isOutOfStock && (
-                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                      <span className="text-red-600 bg-white/90 px-2 py-1 rounded text-xs shadow-sm">
                         Agotado
                       </span>
                     )}
                     {isLowStock && !isOutOfStock && (
-                      <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                      <span className="text-yellow-600 bg-white/90 px-2 py-1 rounded text-xs shadow-sm flex items-center gap-1">
                         <AlertTriangle size={10} />
                         Stock Bajo
                       </span>
                     )}
                   </div>
 
+                  {/* Badge de Categoría usando estilo CSS */}
                   <span className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm">
                     {product.category}
                   </span>
                 </div>
 
-                <div className="product-card__content p-4">
+                <div className="product-card__content">
                   <h3 className="font-bold text-lg mb-1">{product.name}</h3>
                   {product.brand && (
-                    <p className="text-sm text-gray-500 mb-2">{product.brand}</p>
+                    <p className="text-sm text-gray-500 mb-2">
+                      {product.brand}
+                    </p>
                   )}
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {product.description}
                   </p>
 
-                  <div className="flex justify-between items-center mb-2 text-sm">
-                    <span className="font-semibold text-purple-600 text-lg">
+                  <div className="flex justify-between items-center mb-2 text-sm mt-auto pt-2 border-t border-gray-50">
+                    <span className="font-bold text-lg text-gray-800">
                       ${product.price}
                     </span>
-                    <span className="text-gray-500">
+                    {/* El CSS tiene reglas para .text-green-600 que añaden el punto pulsante */}
+                    <span
+                      className={
+                        product.stock > 0 ? "text-green-600" : "text-red-600"
+                      }
+                    >
                       Stock: {product.stock}
                     </span>
                   </div>
 
-                  {product.sku && (
-                    <p className="text-xs text-gray-400 mb-3">SKU: {product.sku}</p>
-                  )}
-
                   {product.tags && product.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-3">
                       {product.tags.slice(0, 2).map((tag, index) => (
-                        <span
-                          key={index}
-                          className="text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded-full"
-                        >
+                        <span key={index} className="bg-purple-100">
                           {tag}
                         </span>
                       ))}
-                      {product.tags.length > 2 && (
-                        <span className="text-xs text-gray-500">
-                          +{product.tags.length - 2}
-                        </span>
-                      )}
                     </div>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-2">
                     {canEdit && (
                       <button
                         onClick={() => openEditModal(product)}
-                        className="flex-1 btn-outline flex items-center justify-center gap-2 py-2 text-sm rounded border hover:bg-gray-50"
+                        // Usamos la clase semántica del CSS para botones de acción
+                        className="text-purple-600 flex-1 flex items-center justify-center gap-2"
                       >
-                        <Edit2 size={14} /> Editar
+                        <Edit2 size={16} /> Editar
                       </button>
                     )}
                     {canDelete && (
                       <button
                         onClick={() => handleDelete(product)}
-                        className="px-3 py-2 text-red-600 hover:bg-red-50 rounded border border-red-200"
+                        className="text-red-500 p-2"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={18} />
                       </button>
                     )}
                   </div>
@@ -359,214 +349,211 @@ const ProductsView = ({ userRole }) => {
       {/* MODAL */}
       {showModal && (
         <Portal>
-          <div
-            className="flex items-center justify-center bg-black/50 backdrop-blur-sm"
-            onClick={closeModal}
-          >
-          <div
-            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white z-10">
-              <h2 className="text-xl font-bold text-gray-800">
-                {editingProduct ? "Editar Producto" : "Nuevo Producto"}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600"
+          {/* El contenedor .products-view asegura que las reglas CSS anidadas apliquen dentro del portal */}
+          <div className="products-view contents">
+            {/* Overlay: usamos la clase bg-black/50 que el CSS estiliza con backdrop-blur */}
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+              onClick={closeModal}
+            >
+              {/* Contenido: usamos max-w-2xl que el CSS anima y estiliza */}
+              <div
+                className="max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative rounded-2xl"
+                onClick={(e) => e.stopPropagation()}
               >
-                <X />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Imagen */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Imagen del Producto
-                </label>
-                <ImageUploader
-                  folder="products"
-                  currentImage={imagePreview}
-                  onUpload={(url) => {
-                    setImagePreview(url);
-                    setFormData({ ...formData, image: url });
-                  }}
-                  disabled={uploading}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre del Producto *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="Ej. Esmalte Rojo Pasión"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Precio ($) *
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Stock Actual
-                  </label>
-                  <input
-                    type="number"
-                    name="stock"
-                    value={formData.stock}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="0"
-                    min="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Stock Mínimo
-                  </label>
-                  <input
-                    type="number"
-                    name="minStock"
-                    value={formData.minStock}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="5"
-                    min="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Categoría *
-                  </label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border rounded-lg"
+                <div className="flex justify-between items-center mb-6 border-b pb-4">
+                  <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-purple-600">
+                    {editingProduct ? "Editar Producto" : "Nuevo Producto"}
+                  </h2>
+                  <button
+                    onClick={closeModal}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    <option value="Esmaltes">Esmaltes</option>
-                    <option value="Kits">Kits</option>
-                    <option value="Cuidado">Cuidado</option>
-                    <option value="Herramientas">Herramientas</option>
-                    <option value="Accesorios">Accesorios</option>
-                  </select>
+                    <X />
+                  </button>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Marca
-                  </label>
-                  <input
-                    type="text"
-                    name="brand"
-                    value={formData.brand}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="Ej. OPI, Essie"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    SKU
-                  </label>
-                  <input
-                    type="text"
-                    name="sku"
-                    value={formData.sku}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="Se genera automáticamente"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descripción
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows="3"
-                    className="w-full p-3 border rounded-lg resize-none"
-                    placeholder="Descripción del producto..."
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tags (separados por comas)
-                  </label>
-                  <input
-                    type="text"
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border rounded-lg"
-                    placeholder="rojo, brillante, duradero"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      checked={formData.isActive}
-                      onChange={handleInputChange}
-                      className="rounded"
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Imagen del Producto
+                    </label>
+                    <ImageUploader
+                      folder="products"
+                      currentImage={imagePreview}
+                      onUpload={(url) => {
+                        setImagePreview(url);
+                        setFormData({ ...formData, image: url });
+                      }}
+                      disabled={uploading}
                     />
-                    <span className="text-sm font-medium text-gray-700">
-                      Producto activo (visible en la tienda)
-                    </span>
-                  </label>
-                </div>
-              </div>
+                  </div>
 
-              <div className="pt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="flex-1 py-2.5 border rounded-lg hover:bg-gray-50 font-medium text-gray-600"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="flex-1 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium disabled:opacity-50"
-                >
-                  {uploading ? "Guardando..." : "Guardar Producto"}
-                </button>
+                  {/* Grid para el formulario */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Nombre del Producto *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Ej. Esmalte Rojo Pasión"
+                        required
+                        // Sin clases extra: el CSS .products-view input[type="text"] lo estiliza
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Precio ($) *
+                      </label>
+                      <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Stock Actual
+                      </label>
+                      <input
+                        type="number"
+                        name="stock"
+                        value={formData.stock}
+                        onChange={handleInputChange}
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Stock Mínimo
+                      </label>
+                      <input
+                        type="number"
+                        name="minStock"
+                        value={formData.minStock}
+                        onChange={handleInputChange}
+                        placeholder="5"
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Categoría *
+                      </label>
+                      <select
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                      >
+                        <option value="Esmaltes">Esmaltes</option>
+                        <option value="Kits">Kits</option>
+                        <option value="Cuidado">Cuidado</option>
+                        <option value="Herramientas">Herramientas</option>
+                        <option value="Accesorios">Accesorios</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Marca
+                      </label>
+                      <input
+                        type="text"
+                        name="brand"
+                        value={formData.brand}
+                        onChange={handleInputChange}
+                        placeholder="Ej. OPI, Essie"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        SKU
+                      </label>
+                      <input
+                        type="text"
+                        name="sku"
+                        value={formData.sku}
+                        onChange={handleInputChange}
+                        placeholder="Auto"
+                      />
+                    </div>
+
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Descripción
+                      </label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows="3"
+                        className="w-full resize-none"
+                        placeholder="Detalles..."
+                      />
+                    </div>
+
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Tags (separados por comas)
+                      </label>
+                      <input
+                        type="text"
+                        name="tags"
+                        value={formData.tags}
+                        onChange={handleInputChange}
+                        placeholder="rojo, brillante, duradero"
+                      />
+                    </div>
+
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="flex items-center gap-3 p-3 border rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="isActive"
+                          checked={formData.isActive}
+                          onChange={handleInputChange}
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          Producto activo (visible en la tienda)
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex gap-3 border-t mt-4">
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className="flex-1 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 font-semibold text-gray-600 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={uploading}
+                      className="flex-1 py-3 bg-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+                    >
+                      {uploading ? "Guardando..." : "Guardar Producto"}
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
+            </div>
           </div>
         </Portal>
       )}

@@ -9,6 +9,7 @@ import { icons } from "../utils/icons";
 import "../styles/Styles.css";
 import ProductsSection from "../components/home/ProductsSection";
 import AcademySection from "../components/home/AcademySection";
+import ReviewsSection from "./ReviewsSection"
 
 
 // Imágenes
@@ -305,6 +306,8 @@ const Home = () => (
     <ServicesSection />
     <div className="section-divider"></div>
     <ProductsSection />
+    <div className="section-divider"></div>
+    <ReviewsSection />
     <div className="section-divider"></div>
     <AcademySection />
   </main>

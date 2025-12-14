@@ -14,7 +14,6 @@
     "tailwind-init": "tailwind init -p"
   },
   "dependencies": {
-
     "@hookform/resolvers": "^5.2.2",
     "@iconify-json/fluent": "^1.2.35",
     "@iconify-json/healthicons": "^1.2.12",
@@ -22,6 +21,7 @@
     "@iconify-json/mdi": "^1.2.3",
     "@iconify/react": "^6.0.2",
     "@paypal/react-paypal-js": "^8.9.2",
+    "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "firebase": "^12.6.0",
     "lucide-react": "^0.555.0",

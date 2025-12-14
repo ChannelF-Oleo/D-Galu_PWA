@@ -1,179 +1,75 @@
 // src/components/cart/PayPalCheckout.jsx
-import { useState } from 'react';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { useCart } from '../../context/CartContext';
-import { CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import './PayPalCheckout.css';
+import React, { useState } from "react";
+import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../../config/firebase";
+import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
+import "./PayPalCheckout.css";
 
-const PayPalCheckout = ({ onSuccess, onCancel }) => {
-  const { items, getTotalPrice, clearCart } = useCart();
-  const [orderStatus, setOrderStatus] = useState(null); // 'processing', 'success', 'error'
-  const [errorMessage, setErrorMessage] = useState('');
+// Ahora recibe props extra: totalAmount y deliveryInfo
+const PayPalCheckout = ({ onSuccess, onCancel, totalAmount, deliveryInfo }) => {
+  const [{ isPending }] = usePayPalScriptReducer();
+  const { user } = useAuth();
+  const { items, clearCart } = useCart();
+  const [error, setError] = useState(null);
 
-  const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-
-  if (!paypalClientId) {
-    return (
-      <div className="paypal-error">
-        <AlertCircle size={24} />
-        <p>PayPal no está configurado correctamente</p>
-      </div>
-    );
-  }
-
+  // Crear la orden en PayPal
   const createOrder = (data, actions) => {
-    const total = getTotalPrice();
-    
     return actions.order.create({
       purchase_units: [
         {
-          description: `Compra en D'Galú Salon - ${items.length} productos`,
+          description: "Compra en D'Galú",
           amount: {
-            currency_code: 'EUR',
-            value: total.toFixed(2),
-            breakdown: {
-              item_total: {
-                currency_code: 'EUR',
-                value: total.toFixed(2)
-              }
-            }
+            value: totalAmount.toFixed(2), // Usamos el total que incluye envío
           },
-          items: items.map(item => ({
-            name: item.name.substring(0, 127),
-            unit_amount: {
-              currency_code: 'EUR',
-              value: item.price.toFixed(2)
-            },
-            quantity: item.quantity.toString()
-          }))
-        }
+        },
       ],
-      application_context: {
-        brand_name: "D'Galú Salon",
-        shipping_preference: 'NO_SHIPPING'
-      }
     });
   };
 
+  // Capturar el pago y guardar en Firestore
   const onApprove = async (data, actions) => {
-    setOrderStatus('processing');
-    
     try {
-      const details = await actions.order.capture();
-      
-      // Guardar la orden en Firebase
-      const orderData = {
-        paymentId: details.id,
-        paypalOrderId: data.orderID,
-        paymentMethod: 'paypal',
-        status: 'paid',
-        items: items.map(item => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          subtotal: item.price * item.quantity
-        })),
-        total: getTotalPrice(),
-        customerEmail: details.payer?.email_address || '',
-        customerName: details.payer?.name?.given_name 
-          ? `${details.payer.name.given_name} ${details.payer.name.surname || ''}`
-          : 'Cliente',
-        paypalDetails: {
-          payerId: details.payer?.payer_id,
-          payerEmail: details.payer?.email_address,
-          captureId: details.purchase_units?.[0]?.payments?.captures?.[0]?.id
-        },
-        createdAt: serverTimestamp()
-      };
+      const order = await actions.order.capture();
 
-      await addDoc(collection(db, 'orders'), orderData);
-      
-      setOrderStatus('success');
+      // Guardar orden en Firestore "orders"
+      await addDoc(collection(db, "orders"), {
+        userId: user?.uid || "guest",
+        customerName: user?.displayName || order.payer.name.given_name,
+        email: user?.email || order.payer.email_address,
+        items: items,
+        total: parseFloat(totalAmount),
+        subtotal: parseFloat(totalAmount) - (deliveryInfo.shippingFee || 0),
+        shippingFee: deliveryInfo.shippingFee || 0,
+        status: "paid", // Pagado con PayPal
+        paymentId: order.id,
+        deliveryMethod: deliveryInfo.method, // 'pickup' | 'shipping'
+        shippingAddress: deliveryInfo.address,
+        createdAt: serverTimestamp(),
+      });
+
       clearCart();
-      
-      if (onSuccess) {
-        onSuccess(details);
-      }
-    } catch (error) {
-      console.error('Error procesando pago:', error);
-      setOrderStatus('error');
-      setErrorMessage('Error al procesar el pago. Por favor intenta de nuevo.');
+      if (onSuccess) onSuccess();
+      alert("¡Pago exitoso! Tu orden ha sido registrada.");
+    } catch (err) {
+      console.error("Error al procesar orden:", err);
+      setError("Hubo un error al guardar tu orden. Contáctanos.");
     }
   };
 
-  const onError = (err) => {
-    console.error('PayPal Error:', err);
-    setOrderStatus('error');
-    setErrorMessage('Ocurrió un error con PayPal. Por favor intenta de nuevo.');
-  };
-
-  if (orderStatus === 'success') {
-    return (
-      <div className="paypal-success">
-        <CheckCircle size={48} className="success-icon" />
-        <h3>¡Pago Exitoso!</h3>
-        <p>Tu pedido ha sido procesado correctamente.</p>
-        <p className="success-note">Recibirás un email de confirmación pronto.</p>
-      </div>
-    );
-  }
-
-  if (orderStatus === 'processing') {
-    return (
-      <div className="paypal-processing">
-        <Loader size={32} className="spinner" />
-        <p>Procesando tu pago...</p>
-      </div>
-    );
-  }
-
-  if (orderStatus === 'error') {
-    return (
-      <div className="paypal-error">
-        <AlertCircle size={32} />
-        <p>{errorMessage}</p>
-        <button 
-          onClick={() => setOrderStatus(null)}
-          className="retry-btn"
-        >
-          Intentar de nuevo
-        </button>
-      </div>
-    );
-  }
+  if (isPending)
+    return <div className="paypal-loading">Cargando PayPal...</div>;
 
   return (
-    <div className="paypal-checkout">
-      <PayPalScriptProvider 
-        options={{ 
-          clientId: paypalClientId,
-          currency: 'EUR',
-          intent: 'capture'
-        }}
-      >
-        <PayPalButtons
-          style={{
-            layout: 'vertical',
-            color: 'gold',
-            shape: 'rect',
-            label: 'paypal',
-            height: 45
-          }}
-          createOrder={createOrder}
-          onApprove={onApprove}
-          onError={onError}
-          onCancel={() => {
-            if (onCancel) onCancel();
-          }}
-        />
-      </PayPalScriptProvider>
-      
-      <p className="paypal-secure-note">
-        🔒 Pago seguro con PayPal
-      </p>
+    <div className="paypal-container">
+      {error && <div className="paypal-error">{error}</div>}
+      <PayPalButtons
+        style={{ layout: "vertical", shape: "rect" }}
+        createOrder={createOrder}
+        onApprove={onApprove}
+        onCancel={onCancel}
+      />
     </div>
   );
 };
