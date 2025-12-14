@@ -2,7 +2,31 @@
 import { useEffect, useState } from "react";
 import "./ReviewsSection.css";
 
-const ENDPOINT =await fetch("https://getgooglereviews-7fa64vatrq-uc.a.run.app")
+// 1. DEFINIMOS LA URL (Solo texto)
+const API_URL = "https://getgooglereviews-7fa64vatrq-uc.a.run.app";
+
+console.log("📡 Conectando a:", API_URL);
+
+try {
+  // 2. HACEMOS LA PETICIÓN
+  const response = await fetch(API_URL);
+
+  // 3. VERIFICAMOS SI ES HTML (El error del '<')
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("text/html")) {
+    throw new Error("❌ Error: La URL devolvió HTML en vez de JSON. Verifica la dirección.");
+  }
+
+  // 4. LEEMOS EL JSON
+  const data = await response.json();
+  console.log("✅ Datos recibidos:", data);
+
+  // Aquí actualizas tu estado con 'data'
+  // setReviews(data.data || []);
+
+} catch (error) {
+  console.error("❌ Error en el frontend:", error);
+}
 
 const ReviewsSection = () => {
   const [reviews, setReviews] = useState([]);
@@ -12,7 +36,7 @@ const ReviewsSection = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await fetch(ENDPOINT);
+        const res = await fetch(API_URL);
 
         if (!res.ok) {
           throw new Error("Failed to fetch reviews");

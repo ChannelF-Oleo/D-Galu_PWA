@@ -15,12 +15,7 @@ import ReviewsSection from "./ReviewsSection"
 // Imágenes
 // Asegúrate de que estas rutas sean correctas según tu estructura
 import trenzaRisaBackground from "../assets/images/dgalu_backgroundHero.jpg";
-import trenzasFoto from "../assets/images/TRECCINE-AFRICANE-630x630.jpeg";
-import uñasFoto from "../assets/images/uñas.jpg";
-import peluqueriaFoto from "../assets/images/peluqueria.jpg";
-import spaFoto from "../assets/images/spa.avif";
-import CejasFoto from "../assets/images/Cejas.png";
-import PosturaFoto from "../assets/images/Postura.png";
+
 
 // --- Datos de Servicios Destacados (ICONOS ELIMINADOS) ---
 const serviceHighlights = [
@@ -34,12 +29,6 @@ const serviceHighlights = [
     title: "Uñas Acrílicas",
     description: "Manicure, pedicure y diseños exclusivos.",
     imgSrc: uñasFoto,
-    href: "/services",
-  },
-  {
-    title: "Peluquería",
-    description: "Cortes, brushing y peinados.",
-    imgSrc: peluqueriaFoto,
     href: "/services",
   },
   {
@@ -159,12 +148,7 @@ const ServicesSection = () => {
 
   // Mapeo de imágenes fallback para servicios conocidos
   const fallbackImages = {
-    "trenzas": trenzasFoto,
-    "uñas": uñasFoto,
-    "peluqueria": peluqueriaFoto,
-    "extensiones": PosturaFoto,
-    "cejas": CejasFoto,
-    "spa": spaFoto
+  
   };
 
   useEffect(() => {
