@@ -9,13 +9,11 @@ import { icons } from "../utils/icons";
 import "../styles/Styles.css";
 import ProductsSection from "../components/home/ProductsSection";
 import AcademySection from "../components/home/AcademySection";
-import ReviewsSection from "./ReviewsSection"
-
+import ReviewsSection from "./ReviewsSection";
 
 // Imágenes
 // Asegúrate de que estas rutas sean correctas según tu estructura
 import trenzaRisaBackground from "../assets/images/dgalu_backgroundHero.jpg";
-
 
 // --- Datos de Servicios Destacados (ICONOS ELIMINADOS) ---
 const serviceHighlights = [
@@ -64,11 +62,11 @@ const ServiceCard = ({ service, fallbackImage }) => {
     <button onClick={handleClick} className="service-card group">
       {/* Wrapper de Imagen */}
       <div className="card-image-wrapper">
-        <img 
-          src={service.image || fallbackImage} 
-          alt={service.name} 
-          className="card-image" 
-          loading="lazy" 
+        <img
+          src={service.image || fallbackImage}
+          alt={service.name}
+          className="card-image"
+          loading="lazy"
         />
       </div>
 
@@ -76,7 +74,7 @@ const ServiceCard = ({ service, fallbackImage }) => {
       <div className="card-content">
         <h3 className="card-title">{service.name}</h3>
         <p className="card-desc">{service.description}</p>
-        
+
         {/* Mostrar número de subservicios si existen */}
         {service.subservices && service.subservices.length > 0 && (
           <div className="text-sm text-purple-600 mb-2">
@@ -147,9 +145,7 @@ const ServicesSection = () => {
   const [loading, setLoading] = useState(true);
 
   // Mapeo de imágenes fallback para servicios conocidos
-  const fallbackImages = {
-  
-  };
+  const fallbackImages = {};
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -158,21 +154,21 @@ const ServicesSection = () => {
         const servicesRef = collection(db, "services");
         // Simplificar la query - quitar el filtro por ahora
         const querySnapshot = await getDocs(servicesRef);
-        
+
         const servicesData = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           console.log("Service found:", doc.id, data);
           servicesData.push({
             id: doc.id,
-            ...data
+            ...data,
           });
         });
 
         console.log("Total services loaded:", servicesData.length);
-        
+
         // Filtrar servicios destacados primero, luego limitar a 3
-        const featuredServices = servicesData.filter(s => s.featured);
+        const featuredServices = servicesData.filter((s) => s.featured);
         if (featuredServices.length >= 3) {
           setServices(featuredServices.slice(0, 3));
         } else {
@@ -192,23 +188,13 @@ const ServicesSection = () => {
     fetchServices();
   }, []);
 
-  const getFallbackImage = (serviceName) => {
-    const name = serviceName.toLowerCase();
-    if (name.includes('trenza')) return fallbackImages.trenzas;
-    if (name.includes('uña')) return fallbackImages.uñas;
-    if (name.includes('peluquer')) return fallbackImages.peluqueria;
-    if (name.includes('extension') || name.includes('peluca')) return fallbackImages.extensiones;
-    if (name.includes('ceja') || name.includes('pestaña')) return fallbackImages.cejas;
-    if (name.includes('spa') || name.includes('masaje')) return fallbackImages.spa;
-    return trenzasFoto; // imagen por defecto
-  };
-
   if (loading) {
     return (
       <section id="servicios" className="services-section">
         <div className="container">
           <h2 className="section-title">
-            Nuestros <span className="highlight-text">Servicios Destacados</span>
+            Nuestros{" "}
+            <span className="highlight-text">Servicios Destacados</span>
           </h2>
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -226,41 +212,39 @@ const ServicesSection = () => {
         </h2>
 
         <div className="services-grid">
-          {services.length > 0 ? (
-            services.map((service) => (
-              <ServiceCard 
-                key={service.id} 
-                service={service}
-                fallbackImage={getFallbackImage(service.name)}
-              />
-            ))
-          ) : (
-            // Fallback a servicios estáticos si no hay datos de Firebase (solo 3)
-            serviceHighlights.slice(0, 3).map((service, index) => (
-              <ServiceCard 
-                key={index} 
-                service={{
-                  id: `fallback-${index}`,
-                  name: service.title,
-                  description: service.description,
-                  image: service.imgSrc
-                }}
-                fallbackImage={service.imgSrc}
-              />
-            ))
-          )}
+          {services.length > 0
+            ? services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  fallbackImage={getFallbackImage(service.name)}
+                />
+              ))
+            : // Fallback a servicios estáticos si no hay datos de Firebase (solo 3)
+              serviceHighlights.slice(0, 3).map((service, index) => (
+                <ServiceCard
+                  key={index}
+                  service={{
+                    id: `fallback-${index}`,
+                    name: service.title,
+                    description: service.description,
+                    image: service.imgSrc,
+                  }}
+                  fallbackImage={service.imgSrc}
+                />
+              ))}
         </div>
 
         {/* Call to action para ver más servicios */}
         <div className="text-center mt-12">
           <button
-            onClick={() => navigate('/services')}
+            onClick={() => navigate("/services")}
             className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition-all hover:shadow-lg font-semibold"
           >
             Ver Catálogo Completo
             <icons.ArrowRight size={20} />
           </button>
-          
+
           <p className="text-sm text-gray-500 mt-3">
             Descubre todos nuestros servicios especializados
           </p>
