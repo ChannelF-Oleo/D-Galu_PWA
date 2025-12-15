@@ -1,8 +1,8 @@
 // src/pages/Home.jsx
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, where } from "firebase/firestore";
+// Agregamos 'limit' para optimizar la descarga
+import { collection, getDocs, query, where, limit } from "firebase/firestore";
 import { db } from "../config/firebase";
 import "../styles/Home.css";
 import { icons } from "../utils/icons";
@@ -12,49 +12,13 @@ import AcademySection from "../components/home/AcademySection";
 import ReviewsSection from "./ReviewsSection";
 
 // Imágenes
-// Asegúrate de que estas rutas sean correctas según tu estructura
 import trenzaRisaBackground from "../assets/images/dgalu_backgroundHero.jpg";
 
-// --- Datos de Servicios Destacados (ICONOS ELIMINADOS) ---
-const serviceHighlights = [
-  {
-    title: "Trenzas Africanas",
-    description: "Comodidad y estilo en cada hebra.",
-    imgSrc: null,
-    href: "/services",
-  },
-  {
-    title: "Uñas Acrílicas",
-    description: "Manicure, pedicure y diseños exclusivos.",
-    imgSrc: null,
-    href: "/services",
-  },
-  {
-    title: "Extenciones y Pelucas",
-    description: "Transforma tu look al instante.",
-    imgSrc: null,
-    href: "/services",
-  },
-  {
-    title: "Cejas y Pestañas",
-    description: "Resalta tu mirada con estilo.",
-    imgSrc: null,
-    href: "/services",
-  },
-  {
-    title: "Spa",
-    description: "Relajación y cuidado integral.",
-    imgSrc: null,
-    href: "/services",
-  },
-];
-
-// --- Card de Servicio conectada con Firebase ---
-const ServiceCard = ({ service, fallbackImage }) => {
+// --- Card de Servicio (Limpia) ---
+const ServiceCard = ({ service }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    // Navegar directamente al detalle del servicio específico
     navigate(`/services/${service.id}`);
   };
 
@@ -63,7 +27,7 @@ const ServiceCard = ({ service, fallbackImage }) => {
       {/* Wrapper de Imagen */}
       <div className="card-image-wrapper">
         <img
-          src={service.image || fallbackImage}
+          src={service.image}
           alt={service.name}
           className="card-image"
           loading="lazy"
@@ -91,25 +55,20 @@ const ServiceCard = ({ service, fallbackImage }) => {
   );
 };
 
-// Hero Section (Sin cambios, se mantiene igual)
+// --- Hero Section ---
 const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
     <section className="hero-section">
-      {/* 1. Fondo dedicado para escritorio (CSS .hero-background) */}
       <div className="hero-background">
         <img src={trenzaRisaBackground} alt="Fondo D'Galú" />
       </div>
-
-      {/* 2. Overlay oscuro (CSS .hero-overlay) */}
       <div className="hero-overlay"></div>
 
-      {/* 3. Contenido Principal */}
       <div className="hero-content animate-fade-in">
         <h1 className="hero-title">D'Galú</h1>
         <p className="hero-subtitle">SALÓN · UÑAS · SPA · MASAJES</p>
-
         <p className="hero-quote">
           Belleza, elegancia y cuidado personalizado en cada servicio.
         </p>
@@ -120,7 +79,6 @@ const HeroSection = () => {
         </button>
       </div>
 
-      {/* 4. Divisor de Ola (CSS .custom-shape-divider-bottom-1671234567) */}
       <div className="custom-shape-divider-bottom-1671234567">
         <svg
           data-name="Layer 1"
@@ -138,48 +96,30 @@ const HeroSection = () => {
   );
 };
 
-// Services Section conectada con Firebase
+// --- Services Section (Solo Firebase) ---
 const ServicesSection = () => {
   const navigate = useNavigate();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mapeo de imágenes fallback para servicios conocidos
-  const fallbackImages = {};
-
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        console.log("Fetching services from Firebase...");
         const servicesRef = collection(db, "services");
-        // Simplificar la query - quitar el filtro por ahora
-        const querySnapshot = await getDocs(servicesRef);
+        
+        // QUERY OPTIMIZADA: Solo trae los destacados (featured == true) y limita a 3
+        const q = query(servicesRef, where("featured", "==", true), limit(3));
+        
+        const querySnapshot = await getDocs(q);
 
-        const servicesData = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          console.log("Service found:", doc.id, data);
-          servicesData.push({
+        const servicesData = querySnapshot.docs.map(doc => ({
             id: doc.id,
-            ...data,
-          });
-        });
+            ...doc.data()
+        }));
 
-        console.log("Total services loaded:", servicesData.length);
-
-        // Filtrar servicios destacados primero, luego limitar a 3
-        const featuredServices = servicesData.filter((s) => s.featured);
-        if (featuredServices.length >= 3) {
-          setServices(featuredServices.slice(0, 3));
-        } else {
-          // Si no hay suficientes destacados, tomar los primeros 3
-          setServices(servicesData.slice(0, 3));
-        }
+        setServices(servicesData);
       } catch (error) {
         console.error("Error fetching services:", error);
-        // Fallback a servicios estáticos si hay error
-        console.log("Using fallback static services");
-        setServices([]);
       } finally {
         setLoading(false);
       }
@@ -193,8 +133,7 @@ const ServicesSection = () => {
       <section id="servicios" className="services-section">
         <div className="container">
           <h2 className="section-title">
-            Nuestros{" "}
-            <span className="highlight-text">Servicios Destacados</span>
+            Nuestros <span className="highlight-text">Servicios Destacados</span>
           </h2>
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -202,6 +141,11 @@ const ServicesSection = () => {
         </div>
       </section>
     );
+  }
+
+  // Si no hay servicios cargados, no renderizamos la grilla vacía (opcional)
+  if (services.length === 0) {
+     return null; 
   }
 
   return (
@@ -212,30 +156,11 @@ const ServicesSection = () => {
         </h2>
 
         <div className="services-grid">
-          {services.length > 0
-            ? services.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  fallbackImage={getFallbackImage(service.name)}
-                />
-              ))
-            : // Fallback a servicios estáticos si no hay datos de Firebase (solo 3)
-              serviceHighlights.slice(0, 3).map((service, index) => (
-                <ServiceCard
-                  key={index}
-                  service={{
-                    id: `fallback-${index}`,
-                    name: service.title,
-                    description: service.description,
-                    image: service.imgSrc,
-                  }}
-                  fallbackImage={service.imgSrc}
-                />
-              ))}
+          {services.map((service) => (
+            <ServiceCard key={service.id} service={service} />
+          ))}
         </div>
 
-        {/* Call to action para ver más servicios */}
         <div className="text-center mt-12">
           <button
             onClick={() => navigate("/services")}
@@ -253,19 +178,6 @@ const ServicesSection = () => {
     </section>
   );
 };
-
-// Secciones Placeholder (Sin cambios)
-const PlaceholderSection = ({ title, IconComponent }) => (
-  <section className="placeholder-section">
-    <div className="container placeholder-wrapper">
-      <IconComponent className="placeholder-icon" size={40} />
-      <h2 className="placeholder-title">{title}</h2>
-      <p className="placeholder-subtitle">
-        Pronto más detalles. Estamos trabajando en el mejor estilo...
-      </p>
-    </div>
-  </section>
-);
 
 const Home = () => (
   <main className="home-main">
