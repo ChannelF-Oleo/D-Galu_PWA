@@ -4,6 +4,64 @@ import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { Image, Search, Filter, Eye, X } from "lucide-react";
 
+// 1. MOVÍ ESTO AFUERA: Optimización para que no se re-cree en cada render
+const getFallbackImages = () => [
+  {
+    id: '1',
+    title: 'Trenzas Africanas Elegantes',
+    description: 'Hermoso peinado con trenzas africanas para ocasión especial',
+    imageUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
+    category: 'trenzas',
+    tags: ['trenzas', 'africanas', 'elegante'],
+    createdAt: new Date()
+  },
+  {
+    id: '2',
+    title: 'Manicure Francesa Clásica',
+    description: 'Manicure francesa perfecta con acabado brillante',
+    imageUrl: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80',
+    category: 'uñas',
+    tags: ['manicure', 'francesa', 'clásica'],
+    createdAt: new Date()
+  },
+  {
+    id: '3',
+    title: 'Corte y Peinado Moderno',
+    description: 'Corte de cabello moderno con peinado profesional',
+    imageUrl: 'https://images.unsplash.com/photo-1562004760-aceed7bb0fe3?auto=format&fit=crop&w=800&q=80',
+    category: 'peluqueria',
+    tags: ['corte', 'peinado', 'moderno'],
+    createdAt: new Date()
+  },
+  {
+    id: '4',
+    title: 'Relajación en Spa',
+    description: 'Sesión de relajación y cuidado corporal',
+    imageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
+    category: 'spa',
+    tags: ['spa', 'relajación', 'masaje'],
+    createdAt: new Date()
+  },
+  {
+    id: '5',
+    title: 'Diseño de Cejas Perfecto',
+    description: 'Cejas perfectamente diseñadas y definidas',
+    imageUrl: 'https://images.unsplash.com/photo-1588510883462-801e14940026?auto=format&fit=crop&w=800&q=80',
+    category: 'cejas',
+    tags: ['cejas', 'diseño', 'definidas'],
+    createdAt: new Date()
+  },
+  {
+    id: '6',
+    title: 'Maquillaje de Noche',
+    description: 'Maquillaje elegante para eventos nocturnos',
+    imageUrl: 'https://images.unsplash.com/photo-1487412947132-28c5d9539d3c?auto=format&fit=crop&w=800&q=80',
+    category: 'maquillaje',
+    tags: ['maquillaje', 'noche', 'elegante'],
+    createdAt: new Date()
+  }
+];
+
 const Gallery = () => {
   const [images, setImages] = useState([]);
   const [filteredImages, setFilteredImages] = useState([]);
@@ -31,10 +89,17 @@ const Gallery = () => {
         const q = query(galleryRef, orderBy("createdAt", "desc"));
         
         const snapshot = await getDocs(q);
-        const imagesData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const imagesData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            // 2. CORRECCIÓN DE FECHAS: 
+            // Si viene de Firebase (.toDate existe), lo convertimos. 
+            // Si no, usamos la fecha actual o la que venga.
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date()
+          };
+        });
 
         if (imagesData.length > 0) {
           setImages(imagesData);
@@ -47,7 +112,7 @@ const Gallery = () => {
         }
       } catch (error) {
         console.error("Error fetching gallery images:", error);
-        // Usar imágenes de ejemplo
+        // Usar imágenes de ejemplo en caso de error
         const fallbackImages = getFallbackImages();
         setImages(fallbackImages);
         setFilteredImages(fallbackImages);
@@ -58,63 +123,6 @@ const Gallery = () => {
 
     fetchImages();
   }, []);
-
-  const getFallbackImages = () => [
-    {
-      id: '1',
-      title: 'Trenzas Africanas Elegantes',
-      description: 'Hermoso peinado con trenzas africanas para ocasión especial',
-      imageUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
-      category: 'trenzas',
-      tags: ['trenzas', 'africanas', 'elegante'],
-      createdAt: new Date()
-    },
-    {
-      id: '2',
-      title: 'Manicure Francesa Clásica',
-      description: 'Manicure francesa perfecta con acabado brillante',
-      imageUrl: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80',
-      category: 'uñas',
-      tags: ['manicure', 'francesa', 'clásica'],
-      createdAt: new Date()
-    },
-    {
-      id: '3',
-      title: 'Corte y Peinado Moderno',
-      description: 'Corte de cabello moderno con peinado profesional',
-      imageUrl: 'https://images.unsplash.com/photo-1562004760-aceed7bb0fe3?auto=format&fit=crop&w=800&q=80',
-      category: 'peluqueria',
-      tags: ['corte', 'peinado', 'moderno'],
-      createdAt: new Date()
-    },
-    {
-      id: '4',
-      title: 'Relajación en Spa',
-      description: 'Sesión de relajación y cuidado corporal',
-      imageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
-      category: 'spa',
-      tags: ['spa', 'relajación', 'masaje'],
-      createdAt: new Date()
-    },
-    {
-      id: '5',
-      title: 'Diseño de Cejas Perfecto',
-      description: 'Cejas perfectamente diseñadas y definidas',
-      imageUrl: 'https://images.unsplash.com/photo-1588510883462-801e14940026?auto=format&fit=crop&w=800&q=80',
-      category: 'cejas',
-      tags: ['cejas', 'diseño', 'definidas'],
-      createdAt: new Date()
-    },
-    {
-      id: '6',
-      title: 'Maquillaje de Noche',
-      description: 'Maquillaje elegante para eventos nocturnos',
-      imageUrl: 'https://images.unsplash.com/photo-1487412947132-28c5d9539d3c?auto=format&fit=crop&w=800&q=80',
-      category: 'maquillaje',
-      tags: ['maquillaje', 'noche', 'elegante'],
-      createdAt: new Date()
-    }
-  ];
 
   // Filtrar imágenes
   useEffect(() => {
@@ -274,63 +282,63 @@ const Gallery = () => {
       {/* Modal de imagen */}
       {selectedImage && (
         <Portal>
-          <div className="flex items-center justify-center p-4 bg-black bg-opacity-75">
-          <div className="relative max-w-4xl max-h-full bg-white rounded-lg overflow-hidden">
-            <button
-              onClick={closeImageModal}
-              className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors"
-            >
-              <X size={20} />
-            </button>
-            
-            <div className="flex flex-col md:flex-row">
-              <div className="md:w-2/3">
-                <img
-                  src={selectedImage.imageUrl}
-                  alt={selectedImage.title}
-                  className="w-full h-auto max-h-96 md:max-h-full object-cover"
-                />
-              </div>
+          <div className="flex items-center justify-center p-4 bg-black bg-opacity-75 fixed inset-0 z-50">
+            <div className="relative max-w-4xl w-full max-h-[90vh] bg-white rounded-lg overflow-y-auto">
+              <button
+                onClick={closeImageModal}
+                className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-colors"
+              >
+                <X size={20} />
+              </button>
               
-              <div className="md:w-1/3 p-6">
-                <div className="mb-4">
-                  <span className="bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full font-medium">
-                    {categories.find(cat => cat.id === selectedImage.category)?.name || selectedImage.category}
-                  </span>
+              <div className="flex flex-col md:flex-row">
+                <div className="md:w-2/3">
+                  <img
+                    src={selectedImage.imageUrl}
+                    alt={selectedImage.title}
+                    className="w-full h-auto object-cover"
+                  />
                 </div>
                 
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                  {selectedImage.title}
-                </h2>
-                
-                <p className="text-gray-600 mb-4">
-                  {selectedImage.description}
-                </p>
-                
-                {selectedImage.tags && selectedImage.tags.length > 0 && (
+                <div className="md:w-1/3 p-6">
                   <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Tags:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedImage.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
+                    <span className="bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full font-medium">
+                      {categories.find(cat => cat.id === selectedImage.category)?.name || selectedImage.category}
+                    </span>
                   </div>
-                )}
-                
-                <div className="text-sm text-gray-500">
-                  {selectedImage.createdAt && (
-                    <p>Fecha: {new Date(selectedImage.createdAt).toLocaleDateString()}</p>
+                  
+                  <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                    {selectedImage.title}
+                  </h2>
+                  
+                  <p className="text-gray-600 mb-4">
+                    {selectedImage.description}
+                  </p>
+                  
+                  {selectedImage.tags && selectedImage.tags.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Tags:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedImage.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
+                  
+                  <div className="text-sm text-gray-500">
+                    {selectedImage.createdAt && (
+                      <p>Fecha: {selectedImage.createdAt.toLocaleDateString()}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           </div>
         </Portal>
       )}
