@@ -108,7 +108,7 @@ const ServicesSection = () => {
         const servicesRef = collection(db, "services");
         
         // QUERY OPTIMIZADA: Solo trae los destacados (featured == true) y limita a 3
-        const q = query(servicesRef, where("featured", "==", true), limit(3));
+        const q = query(servicesRef, limit(3));
         
         const querySnapshot = await getDocs(q);
 
