@@ -6,7 +6,7 @@ import { db } from "../utils/admin";
 const GOOGLE_PLACES_API_KEY = defineSecret("GOOGLE_PLACES_API_KEY");
 
 // Tu ID real (Confirmado)
-const PLACE_ID = "ChIJG8NvMamJr44R9-qbTs2Gycs";
+const PLACE_ID = "ChIJcaSTndyJr44RupvNk9S9jFE";
 
 export const getGoogleReviews = onRequest(
   {

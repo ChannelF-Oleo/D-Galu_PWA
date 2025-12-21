@@ -1,52 +1,53 @@
-// src/components/home/ReviewsSection.jsx
 import { useEffect, useState } from "react";
 import "./ReviewsSection.css";
 
-// 1. DEFINIMOS LA URL (Solo texto)
+// Asegúrate de que esta URL sea EXACTAMENTE la que te dio Firebase al hacer deploy
 const API_URL = "https://getgooglereviews-7fa64vatrq-uc.a.run.app";
-
-console.log("📡 Conectando a:", API_URL);
-
-try {
-  // 2. HACEMOS LA PETICIÓN
-  const response = await fetch(API_URL);
-
-  // 3. VERIFICAMOS SI ES HTML (El error del '<')
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.includes("text/html")) {
-    throw new Error("❌ Error: La URL devolvió HTML en vez de JSON. Verifica la dirección.");
-  }
-
-  // 4. LEEMOS EL JSON
-  const data = await response.json();
-  console.log("✅ Datos recibidos:", data);
-
-  // Aquí actualizas tu estado con 'data'
-  // setReviews(data.data || []);
-
-} catch (error) {
-  console.error("❌ Error en el frontend:", error);
-}
 
 const ReviewsSection = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  // Agregamos un estado para el mensaje de error específico
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const fetchReviews = async () => {
       try {
+        console.log("📡 Fetching reviews from:", API_URL);
         const res = await fetch(API_URL);
 
+        // 1. Si el servidor responde con error HTTP (404, 500, etc.)
         if (!res.ok) {
-          throw new Error("Failed to fetch reviews");
+          throw new Error(`Error HTTP: ${res.status} - ${res.statusText}`);
         }
 
-        const data = await res.json();
-        setReviews(data.reviews || []);
+        const responseData = await res.json();
+        console.log("✅ Respuesta del Backend:", responseData);
+
+        // 2. Manejo de errores lógicos del Backend (según tu archivo TS)
+        if (
+          responseData.status === "ZERO_REVIEWS" ||
+          responseData.status === "ERROR_GOOGLE"
+        ) {
+          throw new Error(
+            responseData.message ||
+              responseData.error_message ||
+              "Error en Google API"
+          );
+        }
+
+        // 3. Asignación correcta de datos
+        // Tu backend devuelve { data: [...] }, no { reviews: [...] }
+        if (responseData.data && Array.isArray(responseData.data)) {
+          setReviews(responseData.data);
+        } else {
+          // Si llega aquí, la estructura no es la esperada
+          console.warn("⚠️ Estructura inesperada:", responseData);
+          setReviews([]);
+        }
       } catch (err) {
-        console.error("Error fetching Google reviews:", err);
-        setError(true);
+        console.error("❌ Error fetching Google reviews:", err);
+        setErrorMessage(err.message);
       } finally {
         setLoading(false);
       }
@@ -63,15 +64,15 @@ const ReviewsSection = () => {
     );
   }
 
-  if (error || !reviews.length) {
+  // Si hay error o no hay reviews, no mostramos la sección
+  if (errorMessage || reviews.length === 0) {
+    console.log("Ocultando sección por:", errorMessage || "Sin reviews");
     return null;
   }
 
   return (
     <section className="reviews-section">
-      <h2 className="reviews-title">
-        Lo que dicen nuestros clientes
-      </h2>
+      <h2 className="reviews-title">Lo que dicen nuestros clientes</h2>
 
       <div className="reviews-grid">
         {reviews.map((review, index) => (
@@ -87,10 +88,7 @@ const ReviewsSection = () => {
               )}
 
               <div className="review-meta">
-                <strong className="review-author">
-                  {review.authorName}
-                </strong>
-
+                <strong className="review-author">{review.authorName}</strong>
                 <span className="review-rating">
                   {"★".repeat(review.rating)}
                   {"☆".repeat(5 - review.rating)}
@@ -98,16 +96,10 @@ const ReviewsSection = () => {
               </div>
             </header>
 
-            {review.text && (
-              <p className="review-text">
-                “{review.text}”
-              </p>
-            )}
+            {review.text && <p className="review-text">“{review.text}”</p>}
 
             {review.relativeTime && (
-              <small className="review-time">
-                {review.relativeTime}
-              </small>
+              <small className="review-time">{review.relativeTime}</small>
             )}
           </article>
         ))}

@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
-import { 
-  GraduationCap, 
-  Clock, 
-  Users, 
-  Star, 
-  BookOpen, 
+import {
+  GraduationCap,
+  Clock,
+  Users,
+  Star,
+  BookOpen,
   Filter,
   Search,
   ArrowRight,
   Award,
-  Calendar
+  Calendar,
 } from "lucide-react";
 
 const CoursesList = () => {
@@ -23,33 +23,71 @@ const CoursesList = () => {
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
+  // Definimos las categorías disponibles
+  const categories = [
+    "all",
+    "Peluquería",
+    "Manicure",
+    "Spa",
+    "Maquillaje",
+    "Pestañas",
+    "Cejas",
+    "General", // Agregado para cursos sin categoría definida
+  ];
+
+  const levels = ["all", "Principiante", "Intermedio", "Avanzado"];
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        
-        // Intentar obtener cursos de Firebase
-        const coursesQuery = query(
-          collection(db, 'courses'),
-          where('isActive', '==', true),
-          orderBy('createdAt', 'desc')
-        );
 
-        const snapshot = await getDocs(coursesQuery);
-        
+        // Referencia a la colección (sin filtros complejos por ahora para asegurar que lleguen datos)
+        const coursesRef = collection(db, "courses");
+        const snapshot = await getDocs(coursesRef);
+
         if (!snapshot.empty) {
-          const coursesData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
+          // Mapeamos los datos de Firebase a la estructura que necesita tu UI
+          const coursesData = snapshot.docs.map((doc) => {
+            const data = doc.data();
+
+            return {
+              id: doc.id,
+              ...data,
+              // 1. TRANSFORMACIÓN DE FECHAS
+              // Firebase devuelve Timestamp, lo convertimos a String ISO para que React no falle
+              startDate: data.startDate?.toDate
+                ? data.startDate.toDate().toISOString()
+                : new Date().toISOString(),
+
+              createdAt: data.createdAt?.toDate
+                ? data.createdAt.toDate().toISOString()
+                : new Date().toISOString(),
+
+              // 2. MAPEO DE CAMPOS (Firebase vs UI)
+              students: data.studentsCount || 0, // Tu DB dice studentsCount, la UI usa students
+              certificate: data.includesMaterials || true, // Usamos includesMaterials como proxy o true por defecto
+
+              // 3. VALORES POR DEFECTO (Para campos que aún no tienes en DB)
+              rating: data.rating || 5.0,
+              level: data.level || "Principiante",
+              category: data.category || "General",
+              featured: data.featured || false,
+              modules: data.modules || 4,
+              image:
+                data.image ||
+                "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80",
+            };
+          });
+
+          console.log("🔥 Cursos cargados desde Firebase:", coursesData);
           setCourses(coursesData);
         } else {
-          // Fallback a cursos de ejemplo
+          console.log("⚠️ Firebase vacío, cargando fallback");
           setCourses(getFallbackCourses());
         }
       } catch (err) {
-        console.error('Error fetching courses:', err);
-        // Fallback a cursos de ejemplo
+        console.error("❌ Error fetching courses:", err);
         setCourses(getFallbackCourses());
       } finally {
         setLoading(false);
@@ -59,124 +97,49 @@ const CoursesList = () => {
     fetchCourses();
   }, []);
 
+  // Función de datos de ejemplo (Fallback)
   const getFallbackCourses = () => [
     {
-      id: 'course-1',
-      title: 'Técnicas Avanzadas de Trenzas Africanas',
-      description: 'Aprende las técnicas más modernas y tradicionales de trenzado africano con nuestros expertos. Incluye práctica con modelos reales.',
-      duration: '40 horas',
+      id: "course-1",
+      title: "Técnicas Avanzadas de Trenzas Africanas",
+      description: "Aprende las técnicas más modernas y tradicionales...",
+      duration: "40 horas",
       students: 150,
       rating: 4.9,
       price: 299,
-      image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
-      level: 'Intermedio',
-      category: 'Peluquería',
+      image:
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80",
+      level: "Intermedio",
+      category: "Peluquería",
       featured: true,
-      instructor: 'María González',
-      startDate: '2024-02-15',
+      instructor: "María González",
+      startDate: new Date().toISOString(),
       modules: 8,
-      certificate: true
+      certificate: true,
     },
-    {
-      id: 'course-2',
-      title: 'Manicure y Pedicure Profesional',
-      description: 'Domina todas las técnicas de cuidado de uñas, desde lo básico hasta diseños avanzados. Incluye kit de herramientas.',
-      duration: '30 horas',
-      students: 200,
-      rating: 4.8,
-      price: 249,
-      image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80',
-      level: 'Principiante',
-      category: 'Manicure',
-      featured: true,
-      instructor: 'Ana Rodríguez',
-      startDate: '2024-02-20',
-      modules: 6,
-      certificate: true
-    },
-    {
-      id: 'course-3',
-      title: 'Spa y Relajación Terapéutica',
-      description: 'Conviértete en especialista en tratamientos de spa y técnicas de relajación. Aprende masajes terapéuticos.',
-      duration: '35 horas',
-      students: 120,
-      rating: 4.9,
-      price: 349,
-      image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
-      level: 'Avanzado',
-      category: 'Spa',
-      featured: true,
-      instructor: 'Carmen López',
-      startDate: '2024-03-01',
-      modules: 10,
-      certificate: true
-    },
-    {
-      id: 'course-4',
-      title: 'Maquillaje Profesional',
-      description: 'Aprende técnicas de maquillaje para eventos, bodas y sesiones fotográficas. Incluye productos profesionales.',
-      duration: '25 horas',
-      students: 180,
-      rating: 4.7,
-      price: 199,
-      image: 'https://images.unsplash.com/photo-1487412947132-28c5d9539d3c?auto=format&fit=crop&w=800&q=80',
-      level: 'Principiante',
-      category: 'Maquillaje',
-      featured: false,
-      instructor: 'Sofía Martín',
-      startDate: '2024-02-25',
-      modules: 5,
-      certificate: true
-    },
-    {
-      id: 'course-5',
-      title: 'Extensiones de Pestañas',
-      description: 'Especialízate en aplicación de extensiones de pestañas. Técnicas clásicas y volumen ruso.',
-      duration: '20 horas',
-      students: 95,
-      rating: 4.8,
-      price: 279,
-      image: 'https://images.unsplash.com/photo-1587570497554-1b72e5352608?auto=format&fit=crop&w=800&q=80',
-      level: 'Intermedio',
-      category: 'Pestañas',
-      featured: false,
-      instructor: 'Isabella Torres',
-      startDate: '2024-03-10',
-      modules: 4,
-      certificate: true
-    },
-    {
-      id: 'course-6',
-      title: 'Microblading y Cejas',
-      description: 'Técnicas avanzadas de microblading y diseño de cejas. Incluye práctica supervisada.',
-      duration: '45 horas',
-      students: 75,
-      rating: 4.9,
-      price: 399,
-      image: 'https://images.unsplash.com/photo-1588510883462-801e14940026?auto=format&fit=crop&w=800&q=80',
-      level: 'Avanzado',
-      category: 'Cejas',
-      featured: false,
-      instructor: 'Valentina Cruz',
-      startDate: '2024-03-15',
-      modules: 12,
-      certificate: true
-    }
+    // ... puedes agregar más aquí si quieres
   ];
 
   // Filtrar cursos
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = selectedLevel === "all" || course.level === selectedLevel;
-    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
-    
+  const filteredCourses = courses.filter((course) => {
+    // Protección contra valores nulos
+    const title = course.title || "";
+    const desc = course.description || "";
+
+    const matchesSearch =
+      title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      desc.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesLevel =
+      selectedLevel === "all" || course.level === selectedLevel;
+
+    const matchesCategory =
+      selectedCategory === "all" || course.category === selectedCategory;
+
     return matchesSearch && matchesLevel && matchesCategory;
   });
 
-  const levels = ["all", "Principiante", "Intermedio", "Avanzado"];
-  const categories = ["all", "Peluquería", "Manicure", "Spa", "Maquillaje", "Pestañas", "Cejas"];
-
+  // Componente de Tarjeta individual
   const CourseCard = ({ course }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group">
       <div className="relative overflow-hidden">
@@ -185,7 +148,7 @@ const CoursesList = () => {
           alt={course.title}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        
+
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {course.featured && (
@@ -193,11 +156,15 @@ const CoursesList = () => {
               Destacado
             </span>
           )}
-          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-            course.level === 'Principiante' ? 'bg-green-100 text-green-800' :
-            course.level === 'Intermedio' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
-          }`}>
+          <span
+            className={`text-xs px-2 py-1 rounded-full font-medium ${
+              course.level === "Principiante"
+                ? "bg-green-100 text-green-800"
+                : course.level === "Intermedio"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
             {course.level}
           </span>
         </div>
@@ -232,11 +199,16 @@ const CoursesList = () => {
         <div className="text-xs text-gray-500 mb-3">
           <div className="flex items-center gap-1 mb-1">
             <Users size={12} />
-            <span>Instructor: {course.instructor}</span>
+            <span>Instructor: {course.instructor || "D'Galú Staff"}</span>
           </div>
           <div className="flex items-center gap-1">
             <Calendar size={12} />
-            <span>Inicia: {new Date(course.startDate).toLocaleDateString()}</span>
+            <span>
+              Inicia:{" "}
+              {course.startDate
+                ? new Date(course.startDate).toLocaleDateString()
+                : "Próximamente"}
+            </span>
           </div>
         </div>
 
@@ -262,9 +234,7 @@ const CoursesList = () => {
             <span className="text-lg font-bold text-purple-600">
               ${course.price}
             </span>
-            <span className="text-xs text-gray-500">
-              Pago único
-            </span>
+            <span className="text-xs text-gray-500">Pago único</span>
           </div>
 
           <button
@@ -279,6 +249,7 @@ const CoursesList = () => {
     </div>
   );
 
+  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -287,12 +258,11 @@ const CoursesList = () => {
             <div className="w-64 h-8 bg-gray-300 rounded mb-4"></div>
             <div className="w-96 h-4 bg-gray-300 rounded mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, index) => (
+              {[...Array(3)].map((_, index) => (
                 <div key={index} className="bg-white rounded-xl p-4 border">
                   <div className="w-full h-48 bg-gray-300 rounded-lg mb-4"></div>
                   <div className="w-3/4 h-4 bg-gray-300 rounded mb-2"></div>
                   <div className="w-1/2 h-4 bg-gray-300 rounded mb-4"></div>
-                  <div className="w-1/4 h-6 bg-gray-300 rounded"></div>
                 </div>
               ))}
             </div>
@@ -314,7 +284,8 @@ const CoursesList = () => {
             D'Galú Academy
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Desarrolla tus habilidades profesionales con nuestros cursos especializados en belleza y bienestar
+            Desarrolla tus habilidades profesionales con nuestros cursos
+            especializados en belleza y bienestar
           </p>
         </div>
 
@@ -341,7 +312,7 @@ const CoursesList = () => {
                 onChange={(e) => setSelectedLevel(e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
-                {levels.map(level => (
+                {levels.map((level) => (
                   <option key={level} value={level}>
                     {level === "all" ? "Todos los niveles" : level}
                   </option>
@@ -356,7 +327,7 @@ const CoursesList = () => {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
-                {categories.map(category => (
+                {categories.map((category) => (
                   <option key={category} value={category}>
                     {category === "all" ? "Todas las categorías" : category}
                   </option>
