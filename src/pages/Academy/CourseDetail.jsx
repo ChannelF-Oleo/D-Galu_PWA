@@ -4,6 +4,7 @@ import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs
 import { db } from "../../config/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { emailService } from "../../services/emailService";
+import CourseEnrollmentModal from "../../components/ui/CourseEnrollmentModal";
 import { 
   ArrowLeft, 
   Clock, 
@@ -30,6 +31,7 @@ const CourseDetail = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [error, setError] = useState(null);
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
+  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -64,7 +66,7 @@ const CourseDetail = () => {
     fetchCourse();
   }, [id, navigate, user]);
 
-  // Verificar si el usuario ya está inscrito
+  // Verificar si el usuario ya está inscrito (por email si no está autenticado)
   const checkEnrollmentStatus = async (courseId, userId) => {
     try {
       setCheckingEnrollment(true);
@@ -83,45 +85,39 @@ const CourseDetail = () => {
     }
   };
 
-  const handleEnroll = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+  const handleEnrollClick = () => {
+    // Abrir modal de inscripción
+    setShowEnrollmentModal(true);
+  };
 
-    // Verificar si ya está inscrito
-    if (isEnrolled) {
-      alert('Ya estás inscrito en este curso');
-      return;
-    }
-
+  const handleEnrollSubmit = async (formData) => {
     try {
       setEnrolling(true);
       setError(null);
 
-      // Verificar nuevamente antes de inscribir (por si acaso)
+      // Verificar si ya existe inscripción con este email
       const enrollmentsRef = collection(db, 'course_enrollments');
       const q = query(
         enrollmentsRef,
         where('courseId', '==', course.id),
-        where('userId', '==', user.uid)
+        where('userEmail', '==', formData.email)
       );
       const existingEnrollment = await getDocs(q);
       
       if (!existingEnrollment.empty) {
-        setIsEnrolled(true);
-        throw new Error('Ya estás inscrito en este curso');
+        throw new Error('Este email ya está inscrito en el curso');
       }
       
       // Crear inscripción en Firebase
       const enrollmentData = {
         courseId: course.id,
         courseTitle: course.title,
-        userId: user.uid,
-        userEmail: user.email,
-        userName: user.displayName || user.email,
+        userId: user?.uid || 'guest',
+        userEmail: formData.email,
+        userName: formData.fullName,
+        userPhone: formData.phone,
         enrolledAt: serverTimestamp(),
-        status: 'enrolled',
+        status: 'pending', // pending hasta que se confirme el pago
         paymentStatus: 'pending',
         price: course.price || 0,
       };
@@ -133,8 +129,8 @@ const CourseDetail = () => {
       // Enviar email de confirmación
       try {
         await emailService.sendCourseEnrollmentConfirmation({
-          userEmail: user.email,
-          studentName: user.displayName || user.email,
+          userEmail: formData.email,
+          studentName: formData.fullName,
           courseTitle: course.title,
           instructor: course.instructor || 'D\'Galú Academy',
           duration: course.duration || 'Por definir',
@@ -149,7 +145,10 @@ const CourseDetail = () => {
       }
 
       setIsEnrolled(true);
-      alert('¡Inscripción exitosa! Te hemos enviado un email de confirmación con los detalles.');
+      setShowEnrollmentModal(false);
+      
+      // Mostrar mensaje de éxito
+      alert(`¡Inscripción exitosa!\n\nHemos enviado un email de confirmación a ${formData.email} con los detalles del curso.\n\nNos pondremos en contacto contigo pronto para coordinar el pago.`);
       
     } catch (error) {
       console.error('Error enrolling in course:', error);
@@ -394,7 +393,7 @@ const CourseDetail = () => {
 
                     {/* Enroll Button */}
                     <button
-                      onClick={handleEnroll}
+                      onClick={handleEnrollClick}
                       disabled={enrolling || isEnrolled}
                       className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
                         isEnrolled
@@ -416,11 +415,9 @@ const CourseDetail = () => {
                       )}
                     </button>
 
-                    {!user && (
-                      <p className="text-xs text-gray-500 text-center mt-2">
-                        Necesitas iniciar sesión para inscribirte
-                      </p>
-                    )}
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      Completa el formulario de inscripción
+                    </p>
 
                     {/* Contact */}
                     <div className="mt-6 pt-6 border-t border-gray-200">
@@ -437,6 +434,15 @@ const CourseDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Enrollment Modal */}
+      <CourseEnrollmentModal
+        isOpen={showEnrollmentModal}
+        onClose={() => setShowEnrollmentModal(false)}
+        onSubmit={handleEnrollSubmit}
+        course={course}
+        loading={enrolling}
+      />
     </div>
   );
 };

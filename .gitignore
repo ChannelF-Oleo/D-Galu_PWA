@@ -132,6 +132,7 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 
+
 # macOS
 .DS_Store
 .AppleDouble
@@ -176,6 +177,7 @@ TEMP-*.md
 DRAFT-*.md
 TODO-PERSONAL.md
 NOTAS-PRIVADAS.md
+.md
 
 # =========================================
 # PROJECT SPECIFIC
