@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { useAuth } from "../../context/AuthContext";
+import { emailService } from "../../services/emailService";
 import { 
   ArrowLeft, 
   Clock, 
@@ -15,7 +16,8 @@ import {
   CheckCircle,
   PlayCircle,
   Download,
-  MessageCircle
+  MessageCircle,
+  AlertCircle
 } from "lucide-react";
 
 const CourseDetail = () => {
@@ -26,131 +28,59 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [error, setError] = useState(null);
+  const [checkingEnrollment, setCheckingEnrollment] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
         setLoading(true);
+        setError(null);
         
-        // Intentar obtener curso de Firebase
+        // Obtener curso de Firebase
         const courseDoc = await getDoc(doc(db, 'courses', id));
         
         if (courseDoc.exists()) {
-          setCourse({ id: courseDoc.id, ...courseDoc.data() });
-        } else {
-          // Fallback a curso de ejemplo
-          const fallbackCourse = getFallbackCourse(id);
-          if (fallbackCourse) {
-            setCourse(fallbackCourse);
-          } else {
-            navigate('/academy');
+          const courseData = { id: courseDoc.id, ...courseDoc.data() };
+          setCourse(courseData);
+          
+          // Verificar si el usuario ya está inscrito
+          if (user) {
+            await checkEnrollmentStatus(courseData.id, user.uid);
           }
+        } else {
+          setError('Curso no encontrado');
+          setCourse(null);
         }
       } catch (err) {
         console.error('Error fetching course:', err);
-        // Fallback a curso de ejemplo
-        const fallbackCourse = getFallbackCourse(id);
-        if (fallbackCourse) {
-          setCourse(fallbackCourse);
-        } else {
-          navigate('/academy');
-        }
+        setError('Error al cargar el curso. Por favor intenta de nuevo.');
+        setCourse(null);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourse();
-  }, [id, navigate]);
+  }, [id, navigate, user]);
 
-  const getFallbackCourse = (courseId) => {
-    const courses = {
-      'course-1': {
-        id: 'course-1',
-        title: 'Técnicas Avanzadas de Trenzas Africanas',
-        description: 'Aprende las técnicas más modernas y tradicionales de trenzado africano con nuestros expertos. Este curso te llevará desde los fundamentos básicos hasta las técnicas más avanzadas utilizadas por profesionales en todo el mundo.',
-        duration: '40 horas',
-        students: 150,
-        rating: 4.9,
-        price: 299,
-        image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
-        level: 'Intermedio',
-        category: 'Peluquería',
-        featured: true,
-        instructor: 'María González',
-        instructorBio: 'Especialista en trenzas africanas con más de 15 años de experiencia. Certificada internacionalmente.',
-        instructorImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?auto=format&fit=crop&w=400&q=80',
-        startDate: '2024-02-15',
-        endDate: '2024-03-15',
-        schedule: 'Lunes a Viernes, 9:00 AM - 1:00 PM',
-        modules: 8,
-        certificate: true,
-        requirements: [
-          'Conocimientos básicos de peluquería',
-          'Herramientas básicas de peinado',
-          'Disponibilidad de tiempo completo'
-        ],
-        curriculum: [
-          {
-            module: 1,
-            title: 'Fundamentos de Trenzas Africanas',
-            duration: '5 horas',
-            topics: ['Historia y cultura', 'Tipos de cabello', 'Herramientas básicas']
-          },
-          {
-            module: 2,
-            title: 'Técnicas Básicas',
-            duration: '5 horas',
-            topics: ['Trenza simple', 'Trenza francesa', 'Preparación del cabello']
-          },
-          {
-            module: 3,
-            title: 'Patrones y Diseños',
-            duration: '5 horas',
-            topics: ['Patrones geométricos', 'Diseños creativos', 'Combinaciones']
-          },
-          {
-            module: 4,
-            title: 'Técnicas Avanzadas',
-            duration: '5 horas',
-            topics: ['Box braids', 'Cornrows', 'Twist outs']
-          },
-          {
-            module: 5,
-            title: 'Cuidado y Mantenimiento',
-            duration: '5 horas',
-            topics: ['Productos recomendados', 'Rutinas de cuidado', 'Solución de problemas']
-          },
-          {
-            module: 6,
-            title: 'Práctica Supervisada',
-            duration: '5 horas',
-            topics: ['Trabajo con modelos', 'Corrección de técnicas', 'Evaluación']
-          },
-          {
-            module: 7,
-            title: 'Aspectos Comerciales',
-            duration: '5 horas',
-            topics: ['Precios y costos', 'Atención al cliente', 'Marketing personal']
-          },
-          {
-            module: 8,
-            title: 'Examen Final y Certificación',
-            duration: '5 horas',
-            topics: ['Examen práctico', 'Evaluación teórica', 'Entrega de certificados']
-          }
-        ],
-        benefits: [
-          'Certificado oficial de D\'Galú Academy',
-          'Kit de herramientas profesionales incluido',
-          'Acceso a grupo privado de graduados',
-          'Descuentos en productos profesionales',
-          'Seguimiento post-graduación por 6 meses'
-        ]
-      }
-    };
-
-    return courses[courseId] || null;
+  // Verificar si el usuario ya está inscrito
+  const checkEnrollmentStatus = async (courseId, userId) => {
+    try {
+      setCheckingEnrollment(true);
+      const enrollmentsRef = collection(db, 'course_enrollments');
+      const q = query(
+        enrollmentsRef,
+        where('courseId', '==', courseId),
+        where('userId', '==', userId)
+      );
+      const snapshot = await getDocs(q);
+      setIsEnrolled(!snapshot.empty);
+    } catch (err) {
+      console.error('Error checking enrollment:', err);
+    } finally {
+      setCheckingEnrollment(false);
+    }
   };
 
   const handleEnroll = async () => {
@@ -159,33 +89,60 @@ const CourseDetail = () => {
       return;
     }
 
+    // Verificar si ya está inscrito
+    if (isEnrolled) {
+      alert('Ya estás inscrito en este curso');
+      return;
+    }
+
     try {
       setEnrolling(true);
+      setError(null);
+
+      // Verificar nuevamente antes de inscribir (por si acaso)
+      const enrollmentsRef = collection(db, 'course_enrollments');
+      const q = query(
+        enrollmentsRef,
+        where('courseId', '==', course.id),
+        where('userId', '==', user.uid)
+      );
+      const existingEnrollment = await getDocs(q);
+      
+      if (!existingEnrollment.empty) {
+        setIsEnrolled(true);
+        throw new Error('Ya estás inscrito en este curso');
+      }
       
       // Crear inscripción en Firebase
-      const enrollmentRef = await addDoc(collection(db, 'course_enrollments'), {
+      const enrollmentData = {
         courseId: course.id,
+        courseTitle: course.title,
         userId: user.uid,
         userEmail: user.email,
         userName: user.displayName || user.email,
         enrolledAt: serverTimestamp(),
         status: 'enrolled',
-        paymentStatus: 'pending'
-      });
+        paymentStatus: 'pending',
+        price: course.price || 0,
+      };
+
+      const enrollmentRef = await addDoc(enrollmentsRef, enrollmentData);
+
+      console.log('Enrollment created successfully:', enrollmentRef.id);
 
       // Enviar email de confirmación
       try {
-        const { emailService } = await import('../../services/emailService');
         await emailService.sendCourseEnrollmentConfirmation({
           userEmail: user.email,
           studentName: user.displayName || user.email,
           courseTitle: course.title,
-          instructor: course.instructor,
-          duration: course.duration,
-          price: course.price,
-          startDate: course.startDate,
+          instructor: course.instructor || 'D\'Galú Academy',
+          duration: course.duration || 'Por definir',
+          price: `RD$ ${course.price || 0}`,
+          startDate: course.startDate || new Date().toISOString(),
           enrollmentId: enrollmentRef.id
         });
+        console.log('Confirmation email sent successfully');
       } catch (emailError) {
         console.error('Error sending enrollment confirmation email:', emailError);
         // No fallar la inscripción por error de email
@@ -193,9 +150,11 @@ const CourseDetail = () => {
 
       setIsEnrolled(true);
       alert('¡Inscripción exitosa! Te hemos enviado un email de confirmación con los detalles.');
+      
     } catch (error) {
       console.error('Error enrolling in course:', error);
-      alert('Error al inscribirse. Por favor intenta de nuevo.');
+      setError(error.message || 'Error al inscribirse. Por favor intenta de nuevo.');
+      alert(error.message || 'Error al inscribirse. Por favor intenta de nuevo.');
     } finally {
       setEnrolling(false);
     }
@@ -229,7 +188,13 @@ const CourseDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Curso no encontrado</h1>
+          <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {error || 'Curso no encontrado'}
+          </h1>
+          <p className="text-gray-600 mb-6">
+            El curso que buscas no está disponible o no existe.
+          </p>
           <button
             onClick={() => navigate('/academy')}
             className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"

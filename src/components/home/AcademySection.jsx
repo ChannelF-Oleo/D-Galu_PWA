@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, limit } from "firebase/firestore";
+import { collection, getDocs, query, where, limit } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import {
   GraduationCap,
@@ -9,20 +9,27 @@ import {
   Users,
   Star,
   BookOpen,
+  AlertCircle,
 } from "lucide-react";
 
 const AcademySection = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchFeaturedCourses = async () => {
       try {
         setLoading(true);
+        setError(null);
 
-        // Query simplificada: Traemos 3 cursos cualquiera para asegurar que se vean datos
-        const coursesQuery = query(collection(db, "courses"), limit(3));
+        // Query mejorada: Traemos cursos activos
+        const coursesQuery = query(
+          collection(db, "courses"),
+          where("isActive", "==", true),
+          limit(3)
+        );
 
         const snapshot = await getDocs(coursesQuery);
 
@@ -32,33 +39,34 @@ const AcademySection = () => {
             return {
               id: doc.id,
               ...data,
-              // 1. TRANSFORMACIÓN DE FECHAS (Crítico para evitar errores)
+              // Transformación de fechas
               startDate: data.startDate?.toDate
                 ? data.startDate.toDate().toISOString()
                 : new Date().toISOString(),
 
-              // 2. MAPEO DE CAMPOS
-              students: data.studentsCount || 0, // Mapeamos studentsCount a students
+              // Mapeo de campos
+              students: data.studentsCount || 0,
 
-              // 3. VALORES POR DEFECTO (Para UI consistente)
+              // Valores por defecto
               rating: data.rating || 5.0,
               level: data.level || "Principiante",
               image:
                 data.image ||
                 "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80",
-              featured: true,
+              featured: data.featured !== undefined ? data.featured : true,
             };
           });
 
           console.log("🔥 Cursos Home cargados:", coursesData);
           setCourses(coursesData);
         } else {
-          // Fallback a cursos de ejemplo solo si Firebase está vacío
-          setCourses(getFallbackCourses());
+          console.log("⚠️ No hay cursos activos en Firebase");
+          setCourses([]);
         }
       } catch (err) {
-        console.error("Error fetching courses:", err);
-        setCourses(getFallbackCourses());
+        console.error("❌ Error fetching courses:", err);
+        setError("Error al cargar los cursos");
+        setCourses([]);
       } finally {
         setLoading(false);
       }
@@ -66,49 +74,6 @@ const AcademySection = () => {
 
     fetchFeaturedCourses();
   }, []);
-
-  const getFallbackCourses = () => [
-    {
-      id: "course-1",
-      title: "Técnicas Avanzadas de Trenzas Africanas",
-      description:
-        "Aprende las técnicas más modernas y tradicionales de trenzado africano.",
-      duration: "40 horas",
-      students: 150,
-      rating: 4.9,
-      price: 299,
-      image:
-        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80",
-      level: "Intermedio",
-      featured: true,
-    },
-    {
-      id: "course-2",
-      title: "Manicure y Pedicure Profesional",
-      description: "Domina todas las técnicas de cuidado de uñas.",
-      duration: "30 horas",
-      students: 200,
-      rating: 4.8,
-      price: 249,
-      image:
-        "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80",
-      level: "Principiante",
-      featured: true,
-    },
-    {
-      id: "course-3",
-      title: "Spa y Relajación Terapéutica",
-      description: "Conviértete en especialista en tratamientos de spa.",
-      duration: "35 horas",
-      students: 120,
-      rating: 4.9,
-      price: 349,
-      image:
-        "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80",
-      level: "Avanzado",
-      featured: true,
-    },
-  ];
 
   const CourseCard = ({ course }) => (
     <div className="course-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col h-full">
@@ -192,26 +157,35 @@ const AcademySection = () => {
     </div>
   );
 
+  // Estado de carga mejorado
   if (loading) {
     return (
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-gradient-to-br from-purple-50 via-white to-pink-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <div className="w-8 h-8 bg-gray-300 rounded-full animate-pulse mx-auto mb-4"></div>
-            <div className="w-48 h-6 bg-gray-300 rounded animate-pulse mx-auto mb-2"></div>
-            <div className="w-64 h-4 bg-gray-300 rounded animate-pulse mx-auto"></div>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4 animate-pulse">
+              <GraduationCap className="w-8 h-8 text-purple-600" />
+            </div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              D'Galú Academy
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Cargando cursos destacados...
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
               <div
-                key={index}
-                className="bg-white rounded-xl p-4 animate-pulse border"
+                key={i}
+                className="bg-white rounded-xl shadow-lg overflow-hidden animate-pulse"
               >
-                <div className="w-full h-48 bg-gray-300 rounded-lg mb-4"></div>
-                <div className="w-3/4 h-4 bg-gray-300 rounded mb-2"></div>
-                <div className="w-1/2 h-4 bg-gray-300 rounded mb-4"></div>
-                <div className="w-1/4 h-6 bg-gray-300 rounded"></div>
+                <div className="w-full h-48 bg-gray-300"></div>
+                <div className="p-6">
+                  <div className="h-4 bg-gray-300 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-gray-300 rounded w-1/2 mb-4"></div>
+                  <div className="h-10 bg-gray-300 rounded"></div>
+                </div>
               </div>
             ))}
           </div>
@@ -220,6 +194,57 @@ const AcademySection = () => {
     );
   }
 
+  // Estado de error
+  if (error) {
+    return (
+      <section className="py-20 bg-gradient-to-br from-purple-50 via-white to-pink-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Error al cargar cursos
+            </h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Sin cursos disponibles
+  if (courses.length === 0) {
+    return (
+      <section className="py-20 bg-gradient-to-br from-purple-50 via-white to-pink-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+              <GraduationCap className="w-8 h-8 text-purple-600" />
+            </div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              D'Galú Academy
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+              Próximamente tendremos cursos disponibles
+            </p>
+            <button
+              onClick={() => navigate("/academy")}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Ver Academia
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Renderizado normal con cursos
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
@@ -257,48 +282,26 @@ const AcademySection = () => {
         </div>
 
         {/* Grid de cursos */}
-        {courses.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              {courses.map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {courses.map((course) => (
+            <CourseCard key={course.id} course={course} />
+          ))}
+        </div>
 
-            {/* Call to action */}
-            <div className="text-center">
-              <button
-                onClick={() => navigate("/academy")}
-                className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition-all hover:shadow-lg font-semibold"
-              >
-                Ver Todos los Cursos
-                <ArrowRight size={20} />
-              </button>
+        {/* Call to action */}
+        <div className="text-center">
+          <button
+            onClick={() => navigate("/academy")}
+            className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition-all hover:shadow-lg font-semibold"
+          >
+            Ver Todos los Cursos
+            <ArrowRight size={20} />
+          </button>
 
-              <p className="text-sm text-gray-500 mt-3">
-                Más de {courses.length} cursos especializados disponibles
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-12">
-            <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Academia en Preparación
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Estamos preparando cursos increíbles para potenciar tu carrera
-              profesional
-            </p>
-            <button
-              onClick={() => navigate("/academy")}
-              className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Explorar Academia
-              <ArrowRight size={20} />
-            </button>
-          </div>
-        )}
+          <p className="text-sm text-gray-500 mt-3">
+            Más de {courses.length} cursos especializados disponibles
+          </p>
+        </div>
       </div>
     </section>
   );

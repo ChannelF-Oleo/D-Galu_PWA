@@ -333,6 +333,7 @@ const AcademyView = ({ userRole }) => {
         onSave={handleSaveStudent}
         editingStudent={editingItem}
         availableCourses={courses}
+        userRole={userRole}
       />
     </div>
   );

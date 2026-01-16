@@ -9,9 +9,11 @@ import {
   Tag,
   Layers,
   Star,
+  AlertCircle,
 } from "lucide-react";
 import Portal from "./Portal";
 import ImageUploader from "../shared/ImageUploader";
+import { createCourseSchema } from "../../types/schemas";
 
 const CourseModal = ({ isOpen, onClose, onSave, editingCourse }) => {
   // Estado inicial con TODOS los campos necesarios
@@ -37,6 +39,7 @@ const CourseModal = ({ isOpen, onClose, onSave, editingCourse }) => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // Listas de opciones
   const categories = [
@@ -74,20 +77,59 @@ const CourseModal = ({ isOpen, onClose, onSave, editingCourse }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrors({});
+    
     try {
-      // Convertir todos los números correctamente antes de guardar
+      // Convertir todos los números correctamente antes de validar
       const dataToSave = {
         ...formData,
-        price: parseFloat(formData.price),
-        capacity: parseInt(formData.capacity) || 0,
-        modules: parseInt(formData.modules) || 0,
-        studentsCount: editingCourse?.studentsCount || 0, // Preservar contador de estudiantes
+        price: parseFloat(formData.price) || 0,
+        capacity: parseInt(formData.capacity) || 10,
+        modules: parseInt(formData.modules) || 1,
+        studentsCount: editingCourse?.studentsCount || 0,
+        isActive: formData.isActive !== undefined ? formData.isActive : true,
       };
+
+      // Validar con Zod (sin campos auto-generados)
+      const validationData = {
+        title: dataToSave.title,
+        description: dataToSave.description,
+        instructor: dataToSave.instructor,
+        price: dataToSave.price,
+        duration: dataToSave.duration,
+        startDate: dataToSave.startDate,
+        schedule: dataToSave.schedule,
+        modality: dataToSave.modality,
+        includesMaterials: dataToSave.includesMaterials,
+        capacity: dataToSave.capacity,
+        category: dataToSave.category,
+        level: dataToSave.level,
+        modules: dataToSave.modules,
+        featured: dataToSave.featured,
+        studentsCount: dataToSave.studentsCount,
+        isActive: dataToSave.isActive,
+        image: dataToSave.image || '',
+      };
+
+      // Validación básica manual (Zod schema necesita ajustes)
+      if (!validationData.title || validationData.title.trim().length < 3) {
+        throw new Error('El título debe tener al menos 3 caracteres');
+      }
+      if (!validationData.description || validationData.description.trim().length < 10) {
+        throw new Error('La descripción debe tener al menos 10 caracteres');
+      }
+      if (validationData.price < 0) {
+        throw new Error('El precio debe ser mayor o igual a 0');
+      }
+      if (validationData.capacity < 1) {
+        throw new Error('La capacidad debe ser al menos 1');
+      }
 
       await onSave(dataToSave);
       onClose();
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error al guardar curso:", error);
+      setErrors({ general: error.message || 'Error al guardar el curso' });
     } finally {
       setLoading(false);
     }
@@ -110,6 +152,17 @@ const CourseModal = ({ isOpen, onClose, onSave, editingCourse }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Mostrar errores generales */}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+                <div>
+                  <p className="text-sm font-medium text-red-800">Error</p>
+                  <p className="text-sm text-red-700">{errors.general}</p>
+                </div>
+              </div>
+            )}
+
             {/* Sección Imagen */}
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
               <label className="block text-sm font-medium text-gray-700 mb-2">

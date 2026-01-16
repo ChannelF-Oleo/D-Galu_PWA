@@ -159,8 +159,8 @@ service cloud.firestore {
 
     // ===== COURSES COLLECTION =====
     match /courses/{courseId} {
-      // Read: Public access for active courses, admin can read all
-      allow read: if resource.data.isActive == true || isAdmin();
+      // Read: Public access for active courses (or courses without isActive field), admin can read all
+      allow read: if (!('isActive' in resource.data) || resource.data.isActive == true) || isAdmin();
       
       // Write: Only admin can manage courses
       allow create, update: if isAdmin();

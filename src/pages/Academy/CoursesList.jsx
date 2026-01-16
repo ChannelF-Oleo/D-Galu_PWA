@@ -13,15 +13,19 @@ import {
   ArrowRight,
   Award,
   Calendar,
+  AlertCircle,
 } from "lucide-react";
 
 const CoursesList = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const coursesPerPage = 9; // 3x3 grid
 
   // Definimos las categorías disponibles
   const categories = [
@@ -83,12 +87,13 @@ const CoursesList = () => {
           console.log("🔥 Cursos cargados desde Firebase:", coursesData);
           setCourses(coursesData);
         } else {
-          console.log("⚠️ Firebase vacío, cargando fallback");
-          setCourses(getFallbackCourses());
+          console.log("⚠️ Firebase vacío, no hay cursos disponibles");
+          setCourses([]);
         }
       } catch (err) {
         console.error("❌ Error fetching courses:", err);
-        setCourses(getFallbackCourses());
+        setError("Error al cargar los cursos");
+        setCourses([]);
       } finally {
         setLoading(false);
       }
@@ -96,29 +101,6 @@ const CoursesList = () => {
 
     fetchCourses();
   }, []);
-
-  // Función de datos de ejemplo (Fallback)
-  const getFallbackCourses = () => [
-    {
-      id: "course-1",
-      title: "Técnicas Avanzadas de Trenzas Africanas",
-      description: "Aprende las técnicas más modernas y tradicionales...",
-      duration: "40 horas",
-      students: 150,
-      rating: 4.9,
-      price: 299,
-      image:
-        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80",
-      level: "Intermedio",
-      category: "Peluquería",
-      featured: true,
-      instructor: "María González",
-      startDate: new Date().toISOString(),
-      modules: 8,
-      certificate: true,
-    },
-    // ... puedes agregar más aquí si quieres
-  ];
 
   // Filtrar cursos
   const filteredCourses = courses.filter((course) => {
@@ -138,6 +120,17 @@ const CoursesList = () => {
 
     return matchesSearch && matchesLevel && matchesCategory;
   });
+
+  // Paginación
+  const indexOfLastCourse = currentPage * coursesPerPage;
+  const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
+  const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse);
+  const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedLevel, selectedCategory]);
 
   // Componente de Tarjeta individual
   const CourseCard = ({ course }) => (
@@ -258,14 +251,38 @@ const CoursesList = () => {
             <div className="w-64 h-8 bg-gray-300 rounded mb-4"></div>
             <div className="w-96 h-4 bg-gray-300 rounded mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, index) => (
+              {[...Array(6)].map((_, index) => (
                 <div key={index} className="bg-white rounded-xl p-4 border">
                   <div className="w-full h-48 bg-gray-300 rounded-lg mb-4"></div>
                   <div className="w-3/4 h-4 bg-gray-300 rounded mb-2"></div>
                   <div className="w-1/2 h-4 bg-gray-300 rounded mb-4"></div>
+                  <div className="w-1/4 h-6 bg-gray-300 rounded"></div>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-24 pb-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Error al cargar cursos
+            </h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Reintentar
+            </button>
           </div>
         </div>
       </div>
@@ -338,19 +355,79 @@ const CoursesList = () => {
         </div>
 
         {/* Results count */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <p className="text-gray-600">
-            Mostrando {filteredCourses.length} de {courses.length} cursos
+            Mostrando {indexOfFirstCourse + 1}-{Math.min(indexOfLastCourse, filteredCourses.length)} de {filteredCourses.length} cursos
           </p>
+          {totalPages > 1 && (
+            <p className="text-sm text-gray-500">
+              Página {currentPage} de {totalPages}
+            </p>
+          )}
         </div>
 
         {/* Courses Grid */}
-        {filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
+        {currentCourses.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Anterior
+                </button>
+                
+                <div className="flex gap-2">
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNumber = index + 1;
+                    // Mostrar solo páginas cercanas a la actual
+                    if (
+                      pageNumber === 1 ||
+                      pageNumber === totalPages ||
+                      (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`px-4 py-2 rounded-lg transition-colors ${
+                            currentPage === pageNumber
+                              ? 'bg-purple-600 text-white'
+                              : 'border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    } else if (
+                      pageNumber === currentPage - 2 ||
+                      pageNumber === currentPage + 2
+                    ) {
+                      return <span key={pageNumber} className="px-2">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12">
             <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
